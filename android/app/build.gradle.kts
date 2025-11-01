@@ -1,51 +1,90 @@
+// (Импорты должны быть в самом верху)
+import java.util.Properties
+import java.io.FileInputStream
+import org.gradle.api.GradleException
+
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
+}
+
+fun localProperties(): Properties {
+    val properties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        properties.load(localPropertiesFile.inputStream())
+    }
+    return properties
 }
 
 android {
-    namespace = "com.example.bloom_mama"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    namespace = "com.midas.bloom_mama" // (Убедитесь, что здесь ваше уникальное имя)
+    compileSdk = 36 // <-- ИСПРАВЛЕНО (было 34)
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // --- ДОБАВЛЕНО (для Ошибки 1) ---
         isCoreLibraryDesugaringEnabled = true
+        // ---
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "1.8"
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/kotlin")
+        }
     }
 
     defaultConfig {
-        applicationId = "com.example.bloom_mama"
+        applicationId = "com.midas.bloom_mama" // (Убедитесь, что здесь ваше уникальное имя)
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        targetSdk = 35 // <-- ИСПРАВЛЕНО (было 34)
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
-    // --- THIS IS THE CORRECTED SECTION ---
-    dependencies {
-
-        implementation("com.google.firebase:firebase-messaging")
-        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // (Этот блок для подписи релиза)
+    signingConfigs {
+        create("release") {
+            try {
+                val props = Properties()
+                props.load(FileInputStream(file("../key.properties")))
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            } catch (e: java.io.FileNotFoundException) {
+                throw GradleException("Failed to read key.properties. Make sure the file is in the 'android' directory.", e)
+            }
+        }
     }
-    // --- END OF CORRECTED SECTION ---
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // --- ДОБАВЛЕНО (для Ошибки 1) ---
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("androidx.appcompat:appcompat:1.6.1")
 }

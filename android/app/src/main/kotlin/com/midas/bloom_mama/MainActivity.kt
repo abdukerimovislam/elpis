@@ -1,4 +1,4 @@
-package com.example.bloom_mama
+package com.midas.bloom_mama
 
 import io.flutter.embedding.android.FlutterActivity
 
