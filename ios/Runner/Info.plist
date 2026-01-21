@@ -2,29 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>Bloom Mama needs access to your photo library to let you select existing bump photos for your gallery and diary.</string>
-
-    <key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Bloom Mama needs permission to save your pregnancy progress photos and collages to your camera roll.</string>
-
-    <key>NSCameraUsageDescription</key>
-    <string>Bloom Mama needs camera access so you can capture your baby bump growth progress directly in the app.</string>
-
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Bloom Mama needs microphone access to allow recording audio for your video diary entries.</string>
-
-    <key>NSCalendarsUsageDescription</key>
-    <string>Bloom Mama needs access to your calendar to sync your doctor visits and pregnancy milestones.</string>
-
-    <key>NSRemindersUsageDescription</key>
-    <string>Bloom Mama needs access to reminders to help you manage your hospital bag checklist.</string>
-
-    <key>NSUserNotificationsUsageDescription</key>
-    <string>Bloom Mama sends notifications to remind you about doctor visits, hydration, and weekly updates.</string>
-
-    <key>CADisableMinimumFrameDurationOnPhone</key>
-    <true/>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -50,31 +27,28 @@
 
     <key>CFBundleURLTypes</key>
     <array>
-       <dict>
-          <key>CFBundleTypeRole</key>
-          <string>Editor</string>
-          <key>CFBundleURLSchemes</key>
-          <array>
-             <string>com.googleusercontent.apps.651153251065-rsu4tbe6df7ejldbp5okiusn7imq3evf</string>
-          </array>
-       </dict>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.ТВОЙ-ID-ЗДЕСЬ</string>
+            </array>
+        </dict>
     </array>
-
-    <key>LSApplicationQueriesSchemes</key>
+    <key>CFBundleLocalizations</key>
     <array>
-      <string>https</string>
-      <string>http</string>
-      <string>mailto</string>
+        <string>en</string>
+        <string>ru</string>
     </array>
 
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>fetch</string>
-        <string>remote-notification</string>
-    </array>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Bloom Mama needs access to your photos so you can add memories to your pregnancy diary.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Bloom Mama needs camera access so you can take photos of your journey.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Bloom Mama needs microphone access to record videos for your diary.</string>
 
-    <key>UIApplicationSupportsIndirectInputEvents</key>
-    <true/>
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
     <key>UIMainStoryboardFile</key>
@@ -82,16 +56,20 @@
     <key>UISupportedInterfaceOrientations</key>
     <array>
        <string>UIInterfaceOrientationPortrait</string>
+       <string>UIInterfaceOrientationPortraitUpsideDown</string>
     </array>
     <key>UISupportedInterfaceOrientations~ipad</key>
     <array>
        <string>UIInterfaceOrientationPortrait</string>
        <string>UIInterfaceOrientationPortraitUpsideDown</string>
-       <string>UIInterfaceOrientationLandscapeLeft</string>
-       <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
-    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+
+    <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
 </dict>
 </plist>
