@@ -1,0 +1,98 @@
+PODS:
+  - Flutter (1.0.0)
+  - image_picker_ios (0.0.1):
+    - Flutter
+  - isar_flutter_libs (1.0.0):
+    - Flutter
+  - package_info_plus (0.4.5):
+    - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - printing (1.0.0):
+    - Flutter
+  - purchases_flutter (9.10.4):
+    - Flutter
+    - PurchasesHybridCommon (= 17.26.1)
+  - purchases_ui_flutter (9.10.4):
+    - Flutter
+    - PurchasesHybridCommonUI (= 17.26.1)
+  - PurchasesHybridCommon (17.26.1):
+    - RevenueCat (= 5.52.1)
+  - PurchasesHybridCommonUI (17.26.1):
+    - PurchasesHybridCommon (= 17.26.1)
+    - RevenueCatUI (= 5.52.1)
+  - RevenueCat (5.52.1)
+  - RevenueCatUI (5.52.1):
+    - RevenueCat (= 5.52.1)
+  - share_plus (0.0.1):
+    - Flutter
+  - url_launcher_ios (0.0.1):
+    - Flutter
+  - wakelock_plus (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - isar_flutter_libs (from `.symlinks/plugins/isar_flutter_libs/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - printing (from `.symlinks/plugins/printing/ios`)
+  - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
+  - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
+  - share_plus (from `.symlinks/plugins/share_plus/ios`)
+  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
+  - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
+
+SPEC REPOS:
+  trunk:
+    - PurchasesHybridCommon
+    - PurchasesHybridCommonUI
+    - RevenueCat
+    - RevenueCatUI
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
+  isar_flutter_libs:
+    :path: ".symlinks/plugins/isar_flutter_libs/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  printing:
+    :path: ".symlinks/plugins/printing/ios"
+  purchases_flutter:
+    :path: ".symlinks/plugins/purchases_flutter/ios"
+  purchases_ui_flutter:
+    :path: ".symlinks/plugins/purchases_ui_flutter/ios"
+  share_plus:
+    :path: ".symlinks/plugins/share_plus/ios"
+  url_launcher_ios:
+    :path: ".symlinks/plugins/url_launcher_ios/ios"
+  wakelock_plus:
+    :path: ".symlinks/plugins/wakelock_plus/ios"
+
+SPEC CHECKSUMS:
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
+  isar_flutter_libs: 9fc2cfb928c539e1b76c481ba5d143d556d94920
+  package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  printing: 54ff03f28fe9ba3aa93358afb80a8595a071dd07
+  purchases_flutter: 50bd6f197fb47c50707930ab9de602f945295c5d
+  purchases_ui_flutter: f265e542ce868899ad6d0c3afc5524e92c6cb6a0
+  PurchasesHybridCommon: a0923adc952779f2174ff699bfdf275f4af13aa5
+  PurchasesHybridCommonUI: 660dde7782b0a577e41945c8c061216052eca075
+  RevenueCat: c3d07077a0cc70b7c90a5a6072d60f9905d2dbc0
+  RevenueCatUI: cf72c82fae460b511a069f266429ea03db45722d
+  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
+  wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
+
+PODFILE CHECKSUM: f8c2dcdfb50bb67645580d28a6bf814fca30bdec
+
+COCOAPODS: 1.16.2

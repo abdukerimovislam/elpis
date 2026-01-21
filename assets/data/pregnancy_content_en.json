@@ -1,0 +1,277 @@
+{
+  "weeks": {
+    "4": {
+      "object": { "title": "Tiny Bead", "description": "A small but precious detail of the huge masterpiece you are starting to paint." },
+      "insights": [
+        { "type": "body", "title": "Quiet Beginning", "content": "A true revolution of cell division is happening inside, though everything seems calm outside.", "icon": "water_drop" },
+        { "type": "action", "title": "Vitamins", "content": "Folic acid is now the main building material for the nervous system.", "icon": "local_hospital" }
+      ]
+    },
+    "5": {
+      "object": { "title": "Apple Seed", "description": "Hidden within this seed is the power of an entire garden that will bloom in the future." },
+      "insights": [
+        { "type": "body", "title": "Heartbeat", "content": "A tiny engine begins its work. It beats twice as fast as yours.", "icon": "favorite" },
+        { "type": "mind", "title": "Emotional Swing", "content": "Sudden joy and tears are normal. Hormones are reshaping your world.", "icon": "psychology" }
+      ]
+    },
+    "6": {
+      "object": { "title": "River Pearl", "description": "A hidden treasure forming in complete safety and warmth." },
+      "insights": [
+        { "type": "body", "title": "Sensitivity", "content": "Your sense of smell sharpens. Your body becomes the best detector for what is good and bad.", "icon": "accessibility_new" },
+        { "type": "action", "title": "Hydration", "content": "Water helps increase blood volume. Sip small amounts throughout the day.", "icon": "water_drop" }
+      ]
+    },
+    "7": {
+      "object": { "title": "Glass Marble", "description": "Bright and transparent, like the children's laughter that will soon fill your home." },
+      "insights": [
+        { "type": "body", "title": "Morning Shadow", "content": "Nausea can strike at any time. Listen to your body: eat what it accepts.", "icon": "spa" },
+        { "type": "mind", "title": "The Secret", "content": "You carry a mystery known only to your body. Enjoy this privacy.", "icon": "lock" }
+      ]
+    },
+    "8": {
+      "object": { "title": "LEGO Brick", "description": "The first brick from which castles, cars, and whole worlds will be built." },
+      "insights": [
+        { "type": "body", "title": "Expanding Space", "content": "The uterus is the size of a grapefruit. Mild cramps are just signs of expansion.", "icon": "accessibility_new" },
+        { "type": "action", "title": "Walks", "content": "Fresh air is the best cure for fatigue. A 20-minute walk works wonders.", "icon": "directions_walk" }
+      ]
+    },
+    "9": {
+      "object": { "title": "Chess Pawn", "description": "A small figure that can become anyone. The strategy of life begins." },
+      "insights": [
+        { "type": "body", "title": "Unique Traits", "content": "The embryonic tail is gone. This is now a tiny human with unique facial features.", "icon": "face" },
+        { "type": "mind", "title": "Vivid Dreams", "content": "Dreams may become strange and vivid. Your subconscious is processing fears and hopes.", "icon": "nightlight_round" }
+      ]
+    },
+    "10": {
+      "object": { "title": "Toy Car", "description": "Soon it will race across the carpet, and you will teach the rules of the road." },
+      "insights": [
+        { "type": "body", "title": "Vital Organs", "content": "Kidneys, liver, and brain are functioning. The foundation of health is laid.", "icon": "favorite" },
+        { "type": "action", "title": "Comfort Wear", "content": "The bump isn't visible yet, but tight jeans may feel restrictive. Switch to soft fabrics.", "icon": "checkroom" }
+      ]
+    },
+    "11": {
+      "object": { "title": "Pacifier", "description": "A symbol of calmness and quiet nights, which will surely come." },
+      "insights": [
+        { "type": "body", "title": "Glow", "content": "Hair might feel thicker and nails grow faster. Thank the hormones.", "icon": "face_retouching_natural" },
+        { "type": "mind", "title": "First Meeting", "content": "Time for the first ultrasound. You will hear the most important rhythm in the world.", "icon": "monitor_heart" }
+      ]
+    },
+    "12": {
+      "object": { "title": "First Wooden Block", "description": "The foundation of the tallest tower he will build in the nursery." },
+      "insights": [
+        { "type": "body", "title": "Energy Surge", "content": "The placenta has taken over. Nausea recedes, making way for energy to plan the future.", "icon": "bolt" },
+        { "type": "mind", "title": "Realization", "content": "The shift from 'I am pregnant' to 'I am having a baby'. Allow yourself to dream.", "icon": "auto_awesome" }
+      ]
+    },
+    "13": {
+      "object": { "title": "Rubber Duck", "description": "A companion for fun baths and soap bubbles." },
+      "insights": [
+        { "type": "body", "title": "Fingerprints", "content": "Unique patterns are forming on tiny fingers. He is already one of a kind.", "icon": "fingerprint" },
+        { "type": "action", "title": "Sharing News", "content": "Many choose this time to tell friends. Do it in a way that feels right for you.", "icon": "campaign" }
+      ]
+    },
+    "14": {
+      "object": { "title": "Christmas Ornament", "description": "A fragile miracle that makes the holiday special. Just like him." },
+      "insights": [
+        { "type": "body", "title": "Expressions", "content": "The baby is learning to frown and smile. He is practicing emotions.", "icon": "emoji_emotions" },
+        { "type": "mind", "title": "Golden Time", "content": "The second trimester is here. Enjoy the return of your strength.", "icon": "spa" }
+      ]
+    },
+    "15": {
+      "object": { "title": "Favorite Mug", "description": "For warm cocoa on a rainy day when you read fairy tales to him." },
+      "insights": [
+        { "type": "body", "title": "Hearing", "content": "Ear bones have hardened. He hears the beating of your heart from the inside.", "icon": "hearing" },
+        { "type": "action", "title": "Skin Care", "content": "The bump is growing. Moisturizing helps avoid itching and stretch marks.", "icon": "water_drop" }
+      ]
+    },
+    "16": {
+      "object": { "title": "Bar of Soap", "description": "The scent of cleanliness, a soft towel, and the gentlest hugs after a bath." },
+      "insights": [
+        { "type": "body", "title": "Active Growth", "content": "Legs are now longer than arms. Proportions are evening out.", "icon": "accessibility" },
+        { "type": "mind", "title": "Pregnancy Brain", "content": "Forgetfulness is normal. Your brain focuses on the main thing, filtering out noise.", "icon": "psychology" }
+      ]
+    },
+    "17": {
+      "object": { "title": "Game Controller", "description": "First games, first victories, and learning to play as a team with Dad." },
+      "insights": [
+        { "type": "body", "title": "Skeleton", "content": "Soft cartilage turns into bone. The baby is accumulating calcium.", "icon": "fitness_center" },
+        { "type": "action", "title": "Sleep on Side", "content": "Start getting used to sleeping on your side. It improves blood flow to the baby.", "icon": "bed" }
+      ]
+    },
+    "18": {
+      "object": { "title": "Paper Plane", "description": "Dreams launched into flight. Lightness and faith that he will fly high." },
+      "insights": [
+        { "type": "body", "title": "Fluttering", "content": "You might feel the first movements, like the fluttering of butterfly wings.", "icon": "flutter_dash" },
+        { "type": "mind", "title": "Connection", "content": "Involve the dad. Let him talk to the bump too.", "icon": "favorite" }
+      ]
+    },
+    "19": {
+      "object": { "title": "Sunglasses", "description": "Bright summer, the beach, and protection for the most curious eyes." },
+      "insights": [
+        { "type": "body", "title": "Vernix", "content": "The skin is covered with a protective coating. Nature's own cream.", "icon": "shield" },
+        { "type": "action", "title": "Naming", "content": "Start making lists. Try saying names out loud.", "icon": "edit" }
+      ]
+    },
+    "20": {
+      "object": { "title": "Teddy Bear", "description": "The loyal friend he will fall asleep with in the dark." },
+      "insights": [
+        { "type": "body", "title": "Equator", "content": "Halfway there. The uterus is at the level of the navel.", "icon": "flag" },
+        { "type": "action", "title": "Ultrasound", "content": "Time to see the baby in detail. You might find out the gender.", "icon": "monitor_heart" }
+      ]
+    },
+    "21": {
+      "object": { "title": "Pencil Case", "description": "First drawings, scribbles, and family portraits on the fridge." },
+      "insights": [
+        { "type": "body", "title": "Taste Buds", "content": "He tastes the amniotic fluid. Your menu shapes his habits.", "icon": "restaurant" },
+        { "type": "mind", "title": "Kicks", "content": "Now they are real kicks. He is exploring the boundaries of his world.", "icon": "sports_mma" }
+      ]
+    },
+    "22": {
+      "object": { "title": "Baby Bottle", "description": "A symbol of care and nourishment. A time when you are needed most." },
+      "insights": [
+        { "type": "body", "title": "Touch", "content": "He touches his face and the umbilical cord. Exploring himself by touch.", "icon": "touch_app" },
+        { "type": "action", "title": "Photoshoot", "content": "The bump looks very neat now. A good time for photos.", "icon": "camera_alt" }
+      ]
+    },
+    "23": {
+      "object": { "title": "First Sneaker", "description": "For those very first unsure steps towards mom." },
+      "insights": [
+        { "type": "body", "title": "Lung Practice", "content": "He 'breathes' fluid, training chest muscles for the first cry.", "icon": "air" },
+        { "type": "mind", "title": "Music", "content": "He might move to the rhythm of music. Dance slowly.", "icon": "music_note" }
+      ]
+    },
+    "24": {
+      "object": { "title": "Toy Microphone", "description": "Loud songs, home concerts, and complete freedom of expression." },
+      "insights": [
+        { "type": "body", "title": "Viability", "content": "An important milestone. Modern medicine can already help the baby survive outside.", "icon": "medical_services" },
+        { "type": "action", "title": "Glucose Test", "content": "Important to check sugar levels. Caring for both of you.", "icon": "science" }
+      ]
+    },
+    "25": {
+      "object": { "title": "Baseball Glove", "description": "The ability to catch luck and be part of a team." },
+      "insights": [
+        { "type": "body", "title": "Capillaries", "content": "Skin is turning pink as it fills with tiny vessels.", "icon": "opacity" },
+        { "type": "mind", "title": "Rest", "content": "Your back might get tired. Yoga or a pool can help relieve tension.", "icon": "self_improvement" }
+      ]
+    },
+    "26": {
+      "object": { "title": "Foldable Umbrella", "description": "Protection from bad weather and jumping in puddles in rain boots." },
+      "insights": [
+        { "type": "body", "title": "Eyes Open", "content": "Eyelids open. He blinks for the first time and sees light through the walls.", "icon": "visibility" },
+        { "type": "mind", "title": "Voices", "content": "He recognizes dad's voice. Let dad read stories aloud.", "icon": "record_voice_over" }
+      ]
+    },
+    "27": {
+      "object": { "title": "Lunchbox", "description": "Care you pack for school. Notes with love inside." },
+      "insights": [
+        { "type": "body", "title": "Final Stretch", "content": "Entering the third trimester. The home stretch.", "icon": "flag" },
+        { "type": "mind", "title": "Dreams", "content": "Anxious dreams about birth are normal. It's the brain rehearsing.", "icon": "nightlight" }
+      ]
+    },
+    "28": {
+      "object": { "title": "Sketchpad", "description": "Space for imagination where he can draw his own world." },
+      "insights": [
+        { "type": "body", "title": "Growth", "content": "The baby is gaining weight fast. It's getting tight, kicks feel stronger.", "icon": "child_care" },
+        { "type": "action", "title": "Doctor Visits", "content": "Meetings will become more frequent. Every two weeks now.", "icon": "calendar_month" }
+      ]
+    },
+    "29": {
+      "object": { "title": "Ukulele", "description": "A small instrument for big songs and soulful evenings." },
+      "insights": [
+        { "type": "body", "title": "Thermoregulation", "content": "The brain learns to control body temperature. Preparing for the world of air.", "icon": "thermostat" },
+        { "type": "mind", "title": "Nutrition", "content": "You need more calcium. The baby is taking it for his bones.", "icon": "local_dining" }
+      ]
+    },
+    "30": {
+      "object": { "title": "Winter Hat", "description": "Warmth for long walks hand in hand through crisp snow." },
+      "insights": [
+        { "type": "body", "title": "Lanugo", "content": "The fuzz on the body starts to disappear. Skin becomes smooth.", "icon": "face" },
+        { "type": "mind", "title": "Nesting", "content": "A strong urge to clean the house. Do it without overworking.", "icon": "home" }
+      ]
+    },
+    "31": {
+      "object": { "title": "Soccer Ball", "description": "First goal, scraped knee, and the pride of a winner." },
+      "insights": [
+        { "type": "body", "title": "Brain Work", "content": "Neural connections form at immense speed. He is processing information.", "icon": "psychology" },
+        { "type": "action", "title": "Breathing", "content": "Shortness of breath is normal. The uterus presses on the diaphragm. Move slower.", "icon": "air" }
+      ]
+    },
+    "32": {
+      "object": { "title": "Stack of Books", "description": "Bedtime stories that will teach him kindness and courage." },
+      "insights": [
+        { "type": "body", "title": "Position", "content": "Many babies turn head down now, preparing for the exit.", "icon": "rotate_right" },
+        { "type": "mind", "title": "Courses", "content": "Good time to learn about breathing techniques for labor.", "icon": "school" }
+      ]
+    },
+    "33": {
+      "object": { "title": "Sleeping Bag", "description": "Camping, starry skies, and the most honest conversations by the fire." },
+      "insights": [
+        { "type": "body", "title": "Immunity", "content": "You are passing antibodies to him. His first shield against viruses.", "icon": "shield" },
+        { "type": "action", "title": "Hospital Bag", "content": "Start packing. Calmness comes with readiness.", "icon": "shopping_bag" }
+      ]
+    },
+    "34": {
+      "object": { "title": "Violin", "description": "A sensitive soul, a sense of beauty, and persistence in learning." },
+      "insights": [
+        { "type": "body", "title": "Maturation", "content": "Lungs are almost ready. If born now, he would need very little help.", "icon": "air" },
+        { "type": "mind", "title": "Fatigue", "content": "The second wave of tiredness. Allow yourself a nap.", "icon": "bedtime" }
+      ]
+    },
+    "35": {
+      "object": { "title": "Bike Helmet", "description": "Safety in the first big adventures. You will always be there to catch him." },
+      "insights": [
+        { "type": "body", "title": "Weight Gain", "content": "He gains 200-300 grams a week. It's getting cozy in there.", "icon": "scale" },
+        { "type": "action", "title": "Birth Plan", "content": "Discuss your wishes with the doctor. But be flexible.", "icon": "assignment" }
+      ]
+    },
+    "36": {
+      "object": { "title": "Keyboard", "description": "First written stories, code, or letters to friends." },
+      "insights": [
+        { "type": "body", "title": "Dropping", "content": "The bump might drop. Breathing gets easier, walking gets harder.", "icon": "arrow_downward" },
+        { "type": "mind", "title": "Full Term", "content": "From next week, the pregnancy is considered full term. You are at the finish line.", "icon": "flag" }
+      ]
+    },
+    "37": {
+      "object": { "title": "Camera", "description": "The ability to see beauty in the world and capture the best moments." },
+      "insights": [
+        { "type": "body", "title": "Ready", "content": "He can be born any day now. His systems work autonomously.", "icon": "check_circle" },
+        { "type": "action", "title": "Logistics", "content": "Check the route to the hospital and charge your phone.", "icon": "map" }
+      ]
+    },
+    "38": {
+      "object": { "title": "Skateboard", "description": "Courage to fall and get back up. Balance and freedom." },
+      "insights": [
+        { "type": "body", "title": "Practice Contractions", "content": "They might become more frequent. If irregular, it's just practice.", "icon": "timer" },
+        { "type": "mind", "title": "Waiting", "content": "Every call starts with 'Is it time?'. Keep your Zen.", "icon": "call_end" }
+      ]
+    },
+    "39": {
+      "object": { "title": "Globe", "description": "The whole world at his feet. He is yet to discover continents and oceans." },
+      "insights": [
+        { "type": "body", "title": "Quiet", "content": "The baby might get a bit quieter before the start. Saving energy.", "icon": "battery_full" },
+        { "type": "action", "title": "Rest", "content": "Sleep, read, watch movies. This time is just for you.", "icon": "movie" }
+      ]
+    },
+    "40": {
+      "object": { "title": "School Backpack", "description": "Inside will be the first 'A' grades, secret notes, and big discoveries." },
+      "insights": [
+        { "type": "body", "title": "Day X", "content": "Due date is just a guide. The baby will choose his perfect moment.", "icon": "event" },
+        { "type": "mind", "title": "Meeting", "content": "Soon you will look into the eyes you've been creating for 9 months.", "icon": "favorite" }
+      ]
+    },
+    "41": {
+      "object": { "title": "Alarm Clock", "description": "Symbol of new time. Time will now be measured in moments of happiness." },
+      "insights": [
+        { "type": "body", "title": "Bonus Time", "content": "He's too cozy in there. Doctors are monitoring his condition.", "icon": "hourglass_top" },
+        { "type": "mind", "title": "Patience", "content": "You are the most patient mom. Just a little bit left.", "icon": "self_improvement" }
+      ]
+    },
+    "42": {
+      "object": { "title": "Gift Box", "description": "The most important gift of your life is ready to be unwrapped." },
+      "insights": [
+        { "type": "body", "title": "Induction", "content": "Maybe he needs a little help. Trust the doctors.", "icon": "medical_services" },
+        { "type": "mind", "title": "New Chapter", "content": "Pregnancy ends, Life begins.", "icon": "auto_stories" }
+      ]
+    }
+  }
+}
