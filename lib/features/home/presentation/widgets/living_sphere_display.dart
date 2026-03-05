@@ -1,11 +1,12 @@
 import 'dart:math' as math;
-import 'dart:ui';
+import 'dart:ui'; // Нужен для MaskFilter в OrbitPainter
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/ui/glass_sphere.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../core/ui/optimized_image.dart';
 
 // Импорты репозитория и настроек
 import 'package:bloom_mama/features/pregnancy/data/pregnancy_repository.dart';
@@ -20,22 +21,17 @@ final pregnancySettingsStreamProvider = StreamProvider<PregnancySettings?>((ref)
 class LivingSphereDisplay extends ConsumerWidget {
   final int week;
   final double scale;
-  final double blur;
+  // Blur удален для производительности
 
   const LivingSphereDisplay({
     super.key,
     required this.week,
     this.scale = 1.0,
-    this.blur = 0.0,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-
-    // ПОЛУЧАЕМ ТЕМУ
-    final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
 
     // 1. СЛУШАЕМ НАСТРОЙКИ
     final settingsAsync = ref.watch(pregnancySettingsStreamProvider);
@@ -43,15 +39,18 @@ class LivingSphereDisplay extends ConsumerWidget {
 
     final int safeWeek = week.clamp(1, 42);
 
-    // ИСПРАВЛЕНИЕ: Пути соответствуют новым папкам assets/images/fruits и assets/images/realistic
-    final folderName = isFruitMode ? 'fruits' : 'realistic';
-    final imagePath = 'assets/images/$folderName/week_$safeWeek.webp';
+    // 🔥 ЛОГИКА ЗАГЛУШКИ КАРТИНОК 🔥
+    // Если недели 1-3 -> показываем 4. Если 41-42 -> показываем 40.
+    int imageWeek = safeWeek;
+    if (safeWeek < 4) imageWeek = 4;
+    if (safeWeek > 40) imageWeek = 40;
 
-    final fallbackIcon = isFruitMode ? Icons.eco : Icons.widgets;
+    // Папки строго маленькими буквами (fruits / realistic)
+    final folderName = isFruitMode ? 'fruits' : 'realistic';
+    final imagePath = 'assets/images/$folderName/week_$imageWeek.webp';
 
     final biometrics = _PregnancyData.getForWeek(safeWeek, l10n);
 
-    // 2. ДЕЙСТВИЕ
     void toggleMode() {
       final repo = ref.read(pregnancyRepositoryProvider);
       repo.setFruitMode(!isFruitMode);
@@ -64,135 +63,117 @@ class LivingSphereDisplay extends ConsumerWidget {
 
           final double orbitSize = contentSize * 0.9;
           final double sphereSize = contentSize * 0.82;
-          final double backgroundSize = contentSize * 0.95;
+          // final double backgroundSize = contentSize * 0.95; // Фон теперь рисуется снаружи
 
-          // ИЗОЛЯЦИЯ ПЕРЕРИСОВКИ: Критично для производительности
-          return RepaintBoundary(
+          return RepaintBoundary( // Изолируем перерисовку для оптимизации
             child: Transform.scale(
               scale: scale,
-              child: ImageFiltered(
-                // БЛЮР: Если он > 0, это может тормозить.
-                // В идеале GlassCard должен управлять этим, но тут мы блюрим весь виджет при скролле.
-                imageFilter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                child: Center(
-                  child: SizedBox(
-                    width: contentSize,
-                    height: contentSize,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      clipBehavior: Clip.none,
-                      children: [
+              child: Center(
+                child: SizedBox(
+                  width: contentSize,
+                  height: contentSize,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
+                    children: [
+                      // --- 1. ФОН ---
+                      // BreathingBackground теперь рисуется в LivingOrbitScreen для оптимизации слоев,
+                      // но мы не удаляем сам класс ниже, чтобы он был доступен.
 
-                        // --- 1. ФОН ---
-                        SizedBox(
-                          width: backgroundSize,
-                          height: backgroundSize,
-                          child: const Center(child: BreathingBackground()),
-                        ),
-
-                        // --- 2. ОРБИТА ---
-                        SizedBox(
-                          width: orbitSize,
-                          height: orbitSize,
-                          child: TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.0, end: safeWeek / 40.0),
-                            duration: const Duration(milliseconds: 1500),
-                            curve: Curves.easeOutCubic,
-                            builder: (context, value, child) {
-                              return CustomPaint(
-                                size: Size(orbitSize, orbitSize),
-                                painter: OrbitPainter(
-                                  progress: value,
-                                  // Используем динамический цвет
-                                  color: primaryColor,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-
-                        // --- 3. СФЕРА ---
-                        SizedBox(
-                          width: sphereSize,
-                          height: sphereSize,
-                          child: Center(
-                            child: GlassSphere(
-                              size: sphereSize,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  Transform.scale(
-                                      scale: sphereSize / 340,
-                                      child: const MagicalLifeCore()
-                                  ),
-
-                                  // Картинка с анимацией
-                                  AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 600),
-                                    switchInCurve: Curves.easeOutBack,
-                                    switchOutCurve: Curves.easeIn,
-                                    transitionBuilder: (child, animation) {
-                                      return FadeTransition(
-                                        opacity: animation,
-                                        child: ScaleTransition(
-                                          scale: animation.drive(Tween(begin: 0.9, end: 1.0)),
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                                    child: Image.asset(
-                                      imagePath,
-                                      key: ValueKey<String>("$safeWeek$isFruitMode"),
-                                      height: sphereSize * 0.6,
-                                      fit: BoxFit.contain,
-                                      // ОПТИМИЗАЦИЯ: Декодируем уменьшенную копию в память
-                                      cacheWidth: 600,
-                                      gaplessPlayback: true,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                          fallbackIcon,
-                                          size: sphereSize * 0.3,
-                                          color: Colors.white54
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                      // --- 2. ОРБИТА ---
+                      SizedBox(
+                        width: orbitSize,
+                        height: orbitSize,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: safeWeek / 40.0),
+                          duration: const Duration(milliseconds: 1500),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return CustomPaint(
+                              size: Size(orbitSize, orbitSize),
+                              painter: OrbitPainter(
+                                progress: value,
+                                color: Theme.of(context).primaryColor,
                               ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      // --- 3. СФЕРА ---
+                      SizedBox(
+                        width: sphereSize,
+                        height: sphereSize,
+                        child: Center(
+                          child: GlassSphere(
+                            size: sphereSize,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Transform.scale(
+                                    scale: sphereSize / 340,
+                                    child: const MagicalLifeCore()
+                                ),
+
+                                // Картинка с анимацией
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 600),
+                                  switchInCurve: Curves.easeOutBack,
+                                  switchOutCurve: Curves.easeIn,
+                                  transitionBuilder: (child, animation) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: ScaleTransition(
+                                        scale: animation.drive(Tween(begin: 0.9, end: 1.0)),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  // Используем OptimizedImage для умного кеша
+                                  child: OptimizedImage(
+                                    key: ValueKey<String>("$imageWeek$isFruitMode"),
+                                    path: imagePath,
+                                    height: sphereSize * 0.6,
+                                    memCacheWidth: 600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                      ),
 
-                        // --- 4. КНОПКА ПЕРЕКЛЮЧЕНИЯ ---
-                        Align(
-                          alignment: const Alignment(0, 0.85),
-                          child: _ModeToggleButton(
-                            isFruitMode: isFruitMode,
-                            onTap: toggleMode,
-                          ),
+                      // --- 4. КНОПКА ПЕРЕКЛЮЧЕНИЯ ---
+                      Align(
+                        alignment: const Alignment(0, 0.85),
+                        child: _ModeToggleButton(
+                          isFruitMode: isFruitMode,
+                          onTap: toggleMode,
                         ),
+                      ),
 
-                        // --- 5. ТЕКСТ (Рост) ---
-                        Align(
-                          alignment: const Alignment(-0.9, -0.5),
-                          child: _BiometricTag(
-                            label: l10n.labelLength,
-                            value: biometrics.length,
-                            alignment: CrossAxisAlignment.start,
-                            delay: 200,
-                          ),
+                      // --- 5. ТЕКСТ (Рост) ---
+                      Align(
+                        alignment: const Alignment(-0.9, -0.5),
+                        child: _BiometricTag(
+                          label: l10n.labelLength,
+                          value: biometrics.length,
+                          alignment: CrossAxisAlignment.start,
+                          delay: 200,
                         ),
+                      ),
 
-                        // --- 6. ТЕКСТ (Вес) ---
-                        Align(
-                          alignment: const Alignment(0.9, 0.5),
-                          child: _BiometricTag(
-                            label: l10n.labelWeight,
-                            value: biometrics.weight,
-                            alignment: CrossAxisAlignment.end,
-                            delay: 400,
-                          ),
+                      // --- 6. ТЕКСТ (Вес) ---
+                      Align(
+                        alignment: const Alignment(0.9, 0.5),
+                        child: _BiometricTag(
+                          label: l10n.labelWeight,
+                          value: biometrics.weight,
+                          alignment: CrossAxisAlignment.end,
+                          delay: 400,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -216,7 +197,6 @@ class _ModeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Получаем цвет текста из темы
     final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
     final l10n = AppLocalizations.of(context)!;
 
@@ -304,7 +284,6 @@ class _BreathingBackgroundState extends State<BreathingBackground>
 
   @override
   Widget build(BuildContext context) {
-    // Используем основной цвет темы для свечения
     final primaryColor = Theme.of(context).primaryColor;
 
     return AnimatedBuilder(
@@ -419,6 +398,7 @@ class OrbitPainter extends CustomPainter {
         center.dx + radius * math.cos(endAngle),
         center.dy + radius * math.sin(endAngle),
       );
+      // Blur для точки оставляем, так как это маленький объект и не сильно влияет на FPS
       canvas.drawCircle(
           endPoint,
           6.0,
@@ -472,8 +452,6 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore> with SingleTickerProv
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  // Цвета ядра оставляем магическими (Золото/Серебро),
-                  // они не зависят от темы UI
                   colors: [const Color(0xFFFCE38A).withOpacity(0.6), const Color(0xFF8E9BAE).withOpacity(0.0)],
                   stops: const [0.2, 1.0],
                 ),
@@ -495,7 +473,8 @@ class _PregnancyData {
 
   static _PregnancyData getForWeek(int week, AppLocalizations l10n) {
     final safeWeek = week.clamp(1, 42);
-    final raw = _biometricsMap[safeWeek] ?? [3500, 510];
+    // Используем безопасные данные, если для недели их нет, берем ближайшую известную
+    final raw = _biometricsMap[safeWeek] ?? (safeWeek < 4 ? [0, 0] : [3500, 510]);
 
     final double weightG = raw[0].toDouble();
     final double lengthMm = raw[1].toDouble();

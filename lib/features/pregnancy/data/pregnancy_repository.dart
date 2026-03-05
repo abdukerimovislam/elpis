@@ -92,8 +92,9 @@ class PregnancyRepository {
     String? languageCode,
     bool? isFruitMode,
     String? themeKey,
-    // --- Новые поля для режима родов ---
+    // --- Поля родов ---
     bool? isLaborMode,
+    bool? showLaborButton, // <-- НОВЫЙ АРГУМЕНТ
     String? partnerName,
     String? partnerPhone,
     String? doctorPhone,
@@ -103,7 +104,6 @@ class PregnancyRepository {
       final settings = await _isar.pregnancySettings.where().findFirst();
 
       if (settings != null) {
-        // Обновляем существующие настройки
         if (name != null) settings.babyName = name;
         if (dueDate != null) settings.estimatedDueDate = dueDate;
         if (prePregnancyWeight != null) settings.prePregnancyWeightKg = prePregnancyWeight;
@@ -112,8 +112,10 @@ class PregnancyRepository {
         if (isFruitMode != null) settings.isFruitMode = isFruitMode;
         if (themeKey != null) settings.themeKey = themeKey;
 
-        // Обновляем поля режима родов
+        // Labor Mode
         if (isLaborMode != null) settings.isLaborMode = isLaborMode;
+        if (showLaborButton != null) settings.showLaborButton = showLaborButton; // <-- СОХРАНЯЕМ
+
         if (partnerName != null) settings.partnerName = partnerName;
         if (partnerPhone != null) settings.partnerPhone = partnerPhone;
         if (doctorPhone != null) settings.doctorPhone = doctorPhone;
@@ -121,7 +123,6 @@ class PregnancyRepository {
 
         await _isar.pregnancySettings.put(settings);
       } else {
-        // Создаем новые, если их не было
         final newSettings = PregnancySettings(
           estimatedDueDate: dueDate ?? DateTime.now().add(const Duration(days: 280)),
           babyName: name,
@@ -130,8 +131,8 @@ class PregnancyRepository {
           languageCode: languageCode ?? 'en',
           isFruitMode: isFruitMode ?? true,
           themeKey: themeKey ?? 'serenity',
-          // Defaults for Labor Mode
           isLaborMode: isLaborMode ?? false,
+          showLaborButton: showLaborButton ?? true, // <-- DEFAULT
           partnerName: partnerName,
           partnerPhone: partnerPhone,
           doctorPhone: doctorPhone,

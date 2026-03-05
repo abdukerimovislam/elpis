@@ -33,6 +33,9 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   late TextEditingController _doctorPhoneController;
   late TextEditingController _hospitalAddressController;
 
+  // 🔥 Локальное состояние свича "Показывать кнопку родов"
+  late bool _showLaborButton;
+
   bool _isExporting = false;
 
   @override
@@ -52,6 +55,10 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     _partnerPhoneController = TextEditingController(text: s.partnerPhone);
     _doctorPhoneController = TextEditingController(text: s.doctorPhone);
     _hospitalAddressController = TextEditingController(text: s.hospitalAddress);
+
+    // Инициализация свича (если поле еще не создано в базе, считаем true)
+    // ignore: unnecessary_null_comparison
+    _showLaborButton = s.showLaborButton ?? true;
   }
 
   @override
@@ -117,6 +124,14 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     setState(() => _isFruitMode = isFruit);
     await _safeRun(() async {
       await ref.read(pregnancyRepositoryProvider).setFruitMode(isFruit);
+    });
+  }
+
+  // 🔥 Метод для сохранения настройки кнопки
+  Future<void> _updateLaborButtonVisibility(bool value) async {
+    setState(() => _showLaborButton = value);
+    await _safeRun(() async {
+      await ref.read(pregnancyRepositoryProvider).updateSettings(showLaborButton: value);
     });
   }
 
@@ -293,7 +308,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
 
                     const SizedBox(height: 24),
 
-                    // 2. EMERGENCY PREP (Новая секция для Родов)
+                    // 2. EMERGENCY PREP (Сюда добавляем свич)
                     Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
@@ -319,6 +334,27 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // 🔥 НОВЫЙ СВИЧ: ВКЛ/ВЫКЛ КНОПКИ РОДОВ 🔥
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        "Show 'I'm in Labor' Button", // Можно вынести в локализацию
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 15
+                                        ),
+                                      ),
+                                    ),
+                                    CupertinoSwitch(
+                                      value: _showLaborButton,
+                                      activeColor: primaryColor,
+                                      onChanged: _updateLaborButtonVisibility,
+                                    ),
+                                  ],
+                                ),
+                                const Divider(height: 24),
+
                                 Text(l10n.laborEmergencyPrepSubtitle, // "Fill this now..."
                                     style: TextStyle(fontSize: 12, color: textMuted)),
                                 const SizedBox(height: 16),

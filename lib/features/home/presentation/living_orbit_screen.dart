@@ -23,7 +23,7 @@ import 'widgets/orbit_navigation_ui.dart';
 import '../../labor/presentation/labor_trigger_button.dart';
 import '../../labor/presentation/labor_confirm_sheet.dart';
 
-// --- ИМПОРТ ДЛЯ ОПТИМИЗИРОВАННОГО ВЫБОРА НЕДЕЛИ ---
+// --- ИМПОРТ ДЛЯ ВЫБОРА НЕДЕЛИ ---
 import 'widgets/week_picker_sheet.dart';
 
 class LivingOrbitScreen extends ConsumerStatefulWidget {
@@ -96,6 +96,12 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
     _depthController.animateTo(target, curve: Curves.easeOutCubic, duration: const Duration(milliseconds: 600));
   }
 
+  // Метод для закрытия информационных слоев (возврат к сфере)
+  void _resetView() {
+    FocusScope.of(context).unfocus();
+    _depthController.animateTo(0.0, curve: Curves.easeInOut, duration: const Duration(milliseconds: 500));
+  }
+
   void _saveLetter(int week) {
     final text = _letterController.text;
     ref.read(pregnancyRepositoryProvider).saveLetter(week, text);
@@ -111,10 +117,14 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
   }
 
   void _openSettings(PregnancySettings settings) {
-    showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (c) => SettingsSheet(currentSettings: settings));
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (c) => SettingsSheet(currentSettings: settings)
+    );
   }
 
-  // ОТКРЫТИЕ ШТОРКИ ВЫБОРА НЕДЕЛИ
   void _openWeekPicker() async {
     HapticFeedback.selectionClick();
     final selectedWeek = await showModalBottomSheet<int>(
@@ -192,6 +202,9 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
           builder: (context, child) {
             final depth = _depthController.value;
 
+            // Если слой открыт, блокируем вертикальный свайп сферы
+            final bool isContentOpen = depth.abs() > 0.15;
+
             final sphereScale = 1.0 - (depth.clamp(0.0, 1.0) * 0.3) + (depth.clamp(-1.0, 0.0).abs() * 0.2);
             final sphereBlur = (depth.clamp(0.0, 1.0) * 10.0);
             final sphereOffset = -depth * 80;
@@ -203,11 +216,11 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
               extendBody: true,
               extendBodyBehindAppBar: true,
               body: GestureDetector(
-                onVerticalDragUpdate: (details) {
+                onVerticalDragUpdate: isContentOpen ? null : (details) {
                   if (MediaQuery.of(context).viewInsets.bottom > 0) return;
                   _depthController.value -= details.primaryDelta! / 400;
                 },
-                onVerticalDragEnd: _onDragEnd,
+                onVerticalDragEnd: isContentOpen ? null : _onDragEnd,
                 onTap: () {
                   FocusScope.of(context).unfocus();
                   _saveLetter(displayWeek);
@@ -224,20 +237,20 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                         child: LivingSphereDisplay(
                           week: displayWeek,
                           scale: sphereScale,
-                          blur: sphereBlur,
                         ),
                       ),
                     ),
 
+                    // КНОПКА ВЫБОРА НЕДЕЛИ
                     Positioned(
                       top: 130,
                       child: AnimatedOpacity(
                         duration: 200.ms,
                         opacity: uiOpacity,
                         child: GestureDetector(
-                          onTap: _openWeekPicker, // ТАП ПО НОМЕРУ НЕДЕЛИ ОТКРЫВАЕТ СПИСОК
+                          onTap: _openWeekPicker,
                           child: Container(
-                            color: Colors.transparent, // Для расширения области нажатия
+                            color: Colors.transparent,
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -266,6 +279,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                     _buildCinematicInfoLayer(context, l10n, displayWeek, depth),
                     _buildLettersLayer(context, l10n, displayWeek, settings.babyName, depth),
 
+                    // ЦИФЕРБЛАТ
                     if (MediaQuery.of(context).viewInsets.bottom == 0)
                       Positioned(
                         bottom: 0, left: 0, right: 0,
@@ -279,11 +293,9 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                         ),
                       ),
 
-                    // КНОПКА РОДОВ
-                    _buildLaborButton(context, depth),
-
                     _buildScrollHint(context, l10n, depth),
 
+                    // APP BAR
                     OrbitAppBar(
                       settings: settings,
                       isFruitMode: _isFruitMode,
@@ -291,6 +303,31 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                       onSettingsTap: () => _openSettings(settings),
                       depthOpacity: uiOpacity,
                     ),
+
+                    // 🔥 КНОПКА РОДОВ (НОВОЕ МЕСТО + ПРОВЕРКА НАСТРОЙКИ) 🔥
+                    // Показываем, только если включено в настройках (showLaborButton)
+                    if (settings.showLaborButton)
+                      Positioned(
+                        top: 110,
+                        right: 16,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 300),
+                          opacity: isContentOpen ? 0.0 : 1.0,
+                          child: IgnorePointer(
+                            ignoring: isContentOpen,
+                            child: LaborTriggerButton(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => const LaborConfirmSheet(),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
 
                     OrbitNavBar(
                       labelHome: "Home",
@@ -309,78 +346,45 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
     );
   }
 
-  Widget _buildLaborButton(BuildContext context, double depth) {
-    final opacity = (1.0 - depth.abs() * 5).clamp(0.0, 1.0);
-    if (opacity <= 0) return const SizedBox();
-
-    return Positioned(
-      bottom: 110,
-      right: 24,
-      child: IgnorePointer(
-        ignoring: opacity < 0.2,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: opacity,
-          child: LaborTriggerButton(
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const LaborConfirmSheet(),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCinematicInfoLayer(BuildContext context, AppLocalizations l10n, int week, double depth) {
-    // Оптимизация: если слой не виден, не рендерим его вообще
     if (depth <= 0.05) return const SizedBox();
 
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).languageCode;
-
-    // Получаем данные (предполагаем, что репозиторий работает быстро или кеширует)
     final objectData = ref.read(insightRepositoryProvider).getObjectData(week, locale, _isFruitMode);
     final insights = ref.read(insightRepositoryProvider).getInsightsForWeek(week, locale);
-
-    // Параллакс эффект
     final slideUp = (1.0 - depth) * 500;
-    // Прозрачность
     final opacity = ((depth - 0.2) / 0.8).clamp(0.0, 1.0);
 
     return Positioned(
-      top: 120, left: 0, right: 0, bottom: 120,
+      top: 120, left: 0, right: 0, bottom: 0,
       child: Transform.translate(
         offset: Offset(0, slideUp),
         child: Opacity(
           opacity: opacity,
           child: SingleChildScrollView(
-            // Важно: NeverScrollable, так как скролл управляется depthController-ом снаружи,
-            // но если контента много, можно включить Bouncing.
-            // Пока оставим Bouncing для внутреннего контента.
-            physics: const BouncingScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 120),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
-
-                // ЗАГОЛОВОК (Фрукт/Объект)
-                Text(
-                    objectData.title,
-                    style: theme.textTheme.displayLarge?.copyWith(
-                        fontSize: 42,
-                        height: 1.1
-                    ),
-                    textAlign: TextAlign.center
+                // Кнопка свернуть
+                IconButton(
+                    onPressed: _resetView,
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                      child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black54),
+                    )
                 ),
 
+                const SizedBox(height: 10),
+                Text(
+                    objectData.title,
+                    style: theme.textTheme.displayLarge?.copyWith(fontSize: 42, height: 1.1),
+                    textAlign: TextAlign.center
+                ),
                 const SizedBox(height: 16),
-
-                // ОПИСАНИЕ
                 Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
@@ -393,10 +397,8 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                         textAlign: TextAlign.center
                     )
                 ),
-
                 const SizedBox(height: 40),
 
-                // ГОРИЗОНТАЛЬНЫЙ СПИСОК ИНСАЙТОВ
                 SizedBox(
                     height: 240,
                     child: ListView.separated(
@@ -408,17 +410,12 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                         itemBuilder: (context, index) {
                           final item = insights[index];
                           final iconData = _getIconFromName(item.iconName);
-
                           return Center(
                               child: SizedBox(
                                   width: 200,
                                   height: 220,
                                   child: GlassCard(
-                                    // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ 🔥
-                                    // Отключаем блюр для элементов списка.
-                                    // Это спасает GPU от перегрузки.
                                       forceNoBlur: true,
-
                                       padding: const EdgeInsets.all(20),
                                       child: Column(
                                           children: [
@@ -426,16 +423,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                                                 children: [
                                                   Icon(iconData, color: theme.textTheme.bodyMedium?.color, size: 22),
                                                   const SizedBox(width: 8),
-                                                  Expanded(
-                                                      child: Text(
-                                                          item.title,
-                                                          style: theme.textTheme.labelSmall?.copyWith(
-                                                              fontSize: 13,
-                                                              fontWeight: FontWeight.bold
-                                                          ),
-                                                          maxLines: 1
-                                                      )
-                                                  )
+                                                  Expanded(child: Text(item.title, style: theme.textTheme.labelSmall?.copyWith(fontSize: 13, fontWeight: FontWeight.bold), maxLines: 1))
                                                 ]
                                             ),
                                             const Spacer(),
@@ -454,7 +442,6 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
                         }
                     )
                 ),
-
                 const SizedBox(height: 40),
               ],
             ),
@@ -466,48 +453,62 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
 
   Widget _buildLettersLayer(BuildContext context, AppLocalizations l10n, int week, String? babyName, double depth) {
     if (depth >= 0) return const SizedBox();
-
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-
     final opacity = ((depth.abs() - 0.1) / 0.9).clamp(0.0, 1.0);
     final offset = -150 * (1 + depth);
 
-    return Positioned(
-      top: 120, left: 0, right: 0, bottom: 120,
+    return Positioned.fill(
+      top: 100,
       child: IgnorePointer(
         ignoring: depth > -0.5,
         child: Opacity(
           opacity: opacity,
           child: Transform.translate(
             offset: Offset(0, offset),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        (babyName != null && babyName.isNotEmpty) ? l10n.connectionTitleNamed(babyName) : l10n.connectionTitle,
-                        style: theme.textTheme.displayLarge?.copyWith(fontSize: 24, color: mutedColor)
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 100),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                      onPressed: _resetView,
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                        child: const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.black54),
+                      )
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      children: [
+                        Text(
+                          (babyName != null && babyName.isNotEmpty) ? l10n.connectionTitleNamed(babyName) : l10n.connectionTitle,
+                          style: theme.textTheme.displayLarge?.copyWith(fontSize: 24, color: mutedColor),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        GlassTextField(
+                            controller: _letterController,
+                            hintText: l10n.connectionPlaceholder,
+                            onEditingComplete: () {
+                              FocusScope.of(context).unfocus();
+                              _saveLetter(week);
+                            }
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                            onPressed: () { showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) => const DiarySheet()); },
+                            icon: Icon(Icons.history_edu, size: 16, color: mutedColor),
+                            label: Text(l10n.connectionOpenDiary, style: theme.textTheme.labelSmall?.copyWith(color: mutedColor))
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    GlassTextField(
-                        controller: _letterController,
-                        hintText: l10n.connectionPlaceholder,
-                        onEditingComplete: () {
-                          FocusScope.of(context).unfocus();
-                          _saveLetter(week);
-                        }
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton.icon(
-                        onPressed: () { showModalBottomSheet(context: context, isScrollControlled: true, backgroundColor: Colors.transparent, builder: (context) => const DiarySheet()); },
-                        icon: Icon(Icons.history_edu, size: 16, color: mutedColor),
-                        label: Text(l10n.connectionOpenDiary, style: theme.textTheme.labelSmall?.copyWith(color: mutedColor))
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -518,7 +519,6 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
 
   Widget _buildDialArea(BuildContext context, AppLocalizations l10n, int displayWeek, int realWeek, bool isBrowsingHistory) {
     final theme = Theme.of(context);
-
     return Container(
       height: 250,
       padding: const EdgeInsets.only(bottom: 120),
@@ -566,17 +566,14 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> with Sing
   }
 
   Widget _buildScrollHint(BuildContext context, AppLocalizations l10n, double depth) {
+    if (depth.abs() > 0.05) return const SizedBox();
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-
-    final opacity = (1.0 - depth.abs() * 4).clamp(0.0, 1.0);
-    if (opacity <= 0) return const SizedBox();
-
     return Positioned(
         bottom: 260, left: 0, right: 0,
         child: IgnorePointer(
             child: Opacity(
-                opacity: opacity,
+                opacity: 0.8,
                 child: Column(
                     children: [
                       Text(

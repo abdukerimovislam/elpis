@@ -440,5 +440,6 @@
   "commonMinutes": "min",
   "commonSeconds": "sec",
   "commonNext": "NEXT",
-  "onboardingNameTitle": "How should we call you?"
+  "onboardingNameTitle": "How should we call you?",
+  "jumpToWeek": "JUMP TO WEEK"
 }
