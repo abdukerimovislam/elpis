@@ -19,17 +19,60 @@ class InsightRepository {
     'en': enInsightsData,
   };
 
-  // 1. Метод для СФЕРЫ (Возвращаем именованный кортеж - Record)
-  // Было: List<String> -> Стало: ({String title, String description})
+  // 🔥 ЭКСКЛЮЗИВНЫЕ ДАННЫЕ ДЛЯ РАННИХ НЕДЕЛЬ (Зашиты в код)
+  static const Map<String, Map<int, Map<String, String>>> _earlyWeeksData = {
+    'ru': {
+      1: {'title': 'Начало цикла', 'description': 'Ваш организм готовится к возможному чуду.'},
+      2: {'title': 'Овуляция', 'description': 'Самый важный момент для зарождения новой жизни.'},
+      3: {'title': 'Зачатие', 'description': 'Маленькая клетка начинает свое большое путешествие.'},
+    },
+    'en': {
+      1: {'title': 'Cycle Start', 'description': 'Your body is preparing for a possible miracle.'},
+      2: {'title': 'Ovulation', 'description': 'The crucial moment for creating new life.'},
+      3: {'title': 'Conception', 'description': 'A tiny cell begins its big journey.'},
+    }
+  };
+
+  String _normalizeLocale(String code) {
+    if (code.contains('_')) return code.split('_')[0].toLowerCase();
+    if (code.contains('-')) return code.split('-')[0].toLowerCase();
+    return code.toLowerCase();
+  }
+
+  // Хелпер: Картинки берем от 4-й недели, если срок меньше
+  int _getSafeImageWeek(int week) {
+    if (week < 4) return 4;
+    if (week > 40) return 40;
+    return week;
+  }
+
+  // 1. Метод для СФЕРЫ (Заголовки и описания)
   ({String title, String description}) getObjectData(int week, String languageCode, bool isFruitMode) {
-    final dataMap = _dataRegistry[languageCode] ?? enInsightsData;
+    final normalizedLang = _normalizeLocale(languageCode);
 
-    if (dataMap.containsKey(week)) {
-      final weekData = dataMap[week]!;
+    // --- ЛОГИКА 1: РАННИЕ НЕДЕЛИ (1-3) ---
+    if (week < 4) {
+      // Пытаемся найти специальный текст для 1-3 недели
+      final specificData = _earlyWeeksData[normalizedLang]?[week] ?? _earlyWeeksData['en']?[week];
 
-      // Выбираем ключ: 'fruit' или 'realistic'
+      if (specificData != null) {
+        return (
+        title: specificData['title']!,
+        description: specificData['description']!
+        );
+      }
+    }
+
+    // --- ЛОГИКА 2: ОБЫЧНЫЕ НЕДЕЛИ (4-42) ---
+    final dataMap = _dataRegistry[normalizedLang] ?? enInsightsData;
+
+    // Для 41-42 недели берем данные 40-й
+    final safeWeek = week > 40 ? 40 : week;
+
+    if (dataMap.containsKey(safeWeek)) {
+      final weekData = dataMap[safeWeek]!;
+
       final modeKey = isFruitMode ? 'fruit' : 'realistic';
-      // Если данных нет, берем другой режим как запасной
       final fallbackKey = isFruitMode ? 'realistic' : 'fruit';
 
       final obj = (weekData[modeKey] ?? weekData[fallbackKey]) as Map<String, String>;
@@ -40,43 +83,41 @@ class InsightRepository {
       );
     }
 
-    // Заглушка
-    return languageCode == 'ru'
+    // Заглушка, если ничего не нашлось
+    return normalizedLang == 'ru'
         ? (title: "Загрузка...", description: "Данные обновляются")
         : (title: "Loading...", description: "Updating data");
   }
 
   // 2. Метод для ЛЕНТЫ ИНСАЙТОВ
   List<Insight> getInsightsForWeek(int week, String languageCode) {
-    final dataMap = _dataRegistry[languageCode] ?? enInsightsData;
+    final normalizedLang = _normalizeLocale(languageCode);
+    final dataMap = _dataRegistry[normalizedLang] ?? enInsightsData;
 
-    if (dataMap.containsKey(week)) {
-      final weekData = dataMap[week]!;
+    // Для 1-3 недели можем показывать инсайты от 4-й (общие советы про витамины)
+    // Или возвращать пустой список, если не хотим путать маму.
+    // Решение: Берем от 4-й, так как там про фолиевую кислоту - это актуально всегда.
+    final safeWeek = week < 4 ? 4 : (week > 40 ? 40 : week);
+
+    if (dataMap.containsKey(safeWeek)) {
+      final weekData = dataMap[safeWeek]!;
 
       final rawInsights = weekData['insights'];
-      // Проверка на null и тип
       if (rawInsights is! List) return [];
 
       return rawInsights.map((map) {
-        // Приводим к Map
         final m = map as Map<String, dynamic>;
-
         return Insight(
-          // Генерируем уникальный ID для списка
           id: "${week}_${m['title'].hashCode}",
           type: _parseType(m['type'] as String? ?? 'body'),
           title: m['title'] as String? ?? "",
           content: m['content'] as String? ?? "",
-          // ВАЖНО: Передаем имя иконки строкой, UI сам превратит её в IconData
           iconName: m['icon'] as String? ?? 'info',
         );
       }).toList();
     }
     return [];
   }
-
-  // --- ХЕЛПЕРЫ ---
-  // Метод _getIcon удален, так как репозиторий больше не работает с UI (Flutter Material)
 
   InsightType _parseType(String type) {
     switch (type) {

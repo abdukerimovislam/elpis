@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../l10n/app_localizations.dart'; // Не забудь импорт!
 import '../../../../core/ui/glass_card.dart';
 import '../../../../core/ui/optimized_image.dart';
 import '../../../pregnancy/data/pregnancy_repository.dart';
 import '../../../pregnancy/domain/pregnancy_settings.dart';
-
 
 class WeekPickerSheet extends ConsumerWidget {
   const WeekPickerSheet({super.key});
@@ -13,6 +12,7 @@ class WeekPickerSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsStream = ref.watch(pregnancyRepositoryProvider).watchSettings();
+    final l10n = AppLocalizations.of(context); // Получаем переводы
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
@@ -22,7 +22,6 @@ class WeekPickerSheet extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Ручка шторки
           Center(
             child: Container(
               margin: const EdgeInsets.symmetric(vertical: 16),
@@ -35,15 +34,15 @@ class WeekPickerSheet extends ConsumerWidget {
             ),
           ),
 
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
             child: Text(
-              "JUMP TO WEEK",
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+              // 🔥 ИСПРАВЛЕНИЕ: Локализация заголовка
+              l10n?.jumpToWeek ?? "JUMP TO WEEK", // Убедись, что добавил ключ в ARB, или оставь хардкод если нет
+              style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
             ),
           ),
 
-          // СПИСОК
           Expanded(
             child: StreamBuilder<PregnancySettings?>(
                 stream: settingsStream,
@@ -51,33 +50,22 @@ class WeekPickerSheet extends ConsumerWidget {
                   final currentWeek = snapshot.data?.currentWeek ?? 1;
                   final isFruitMode = snapshot.data?.isFruitMode ?? true;
 
-                  // ListView.builder - ленивый рендеринг (строит только то, что на экране)
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: 42,
-
-                    // ВАЖНО: Фиксированная высота элемента.
-                    // Это позволяет Flutter пропустить расчет лайаута для всех 42 элементов сразу.
                     itemExtent: 88.0,
-
                     itemBuilder: (context, index) {
                       final week = index + 1;
                       final isSelected = week == currentWeek;
 
-                      // RepaintBoundary - изолирует каждый элемент списка.
-                      // При скролле перерисовывается только смещение, а не контент внутри.
                       return RepaintBoundary(
                         child: _WeekItem(
                           week: week,
                           isSelected: isSelected,
                           isFruitMode: isFruitMode,
+                          // 🔥 Передаем l10n внутрь
+                          weekLabel: l10n?.weekLabel(week) ?? "Week $week",
                           onTap: () {
-                            // Сохраняем новую дату (откатываемся назад или вперед)
-                            // Логика: Если LMP была X, а мы ставим неделю Y, то LMP смещается.
-                            // Для простоты здесь просто закрываем, реализацию смены даты
-                            // лучше вынести в репозиторий (updateCurrentWeek).
-
-                            // Пока просто лог, так как метода updateWeekByNumber нет в репозитории
                             Navigator.pop(context, week);
                           },
                         ),
@@ -98,54 +86,58 @@ class _WeekItem extends StatelessWidget {
   final bool isSelected;
   final bool isFruitMode;
   final VoidCallback onTap;
+  final String weekLabel; // Новый параметр
 
   const _WeekItem({
     required this.week,
     required this.isSelected,
     required this.isFruitMode,
     required this.onTap,
+    required this.weekLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Логика заглушки (оставляем как было)
+    int imageWeek = week;
+    if (week < 4) imageWeek = 4;
+    if (week > 40) imageWeek = 40;
+
     final folder = isFruitMode ? 'fruits' : 'realistic';
-    final path = 'assets/images/$folder/week_$week.webp';
+    final path = 'assets/images/$folder/week_$imageWeek.webp';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: onTap,
         child: GlassCard(
-          // Если элемент не выбран, отключаем блюр для производительности скролла
           forceNoBlur: !isSelected,
           color: isSelected ? theme.primaryColor.withOpacity(0.2) : theme.cardColor.withOpacity(0.5),
           borderRadius: 16,
           padding: const EdgeInsets.all(8),
           child: Row(
             children: [
-              // КАРТИНКА (ОПТИМИЗИРОВАННАЯ)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: OptimizedImage(
                   path: path,
                   width: 56,
                   height: 56,
-                  // Для списка нам хватит очень маленького кеша
                   memCacheWidth: 150,
                 ),
               ),
               const SizedBox(width: 16),
 
-              // ТЕКСТ
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Week $week",
+                      // 🔥 ИСПРАВЛЕНИЕ: Используем локализованную строку (например "Неделя 5")
+                      weekLabel.toUpperCase(),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

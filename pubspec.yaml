@@ -64,7 +64,6 @@ flutter:
     - assets/shaders/
     - assets/data/
     - assets/names.csv
-    - assets/images/
     - assets/images/fruits/
     - assets/images/realistic/
 

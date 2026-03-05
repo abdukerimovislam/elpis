@@ -6,7 +6,7 @@ part of 'labor_mode_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$laborModeHash() => r'd30eb44d0890b406167b589e4e4f88634462c29b';
+String _$laborModeHash() => r'ae18d8fbaeccdac46ec9dd42ee216edc0caf4776';
 
 /// See also [LaborMode].
 @ProviderFor(LaborMode)

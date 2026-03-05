@@ -1025,4 +1025,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingNameTitle => 'How should we call you?';
+
+  @override
+  String get jumpToWeek => 'JUMP TO WEEK';
 }

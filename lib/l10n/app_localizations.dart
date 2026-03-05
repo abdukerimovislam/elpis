@@ -2062,6 +2062,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How should we call you?'**
   String get onboardingNameTitle;
+
+  /// No description provided for @jumpToWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'JUMP TO WEEK'**
+  String get jumpToWeek;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
