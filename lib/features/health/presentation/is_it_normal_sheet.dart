@@ -51,9 +51,10 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
           // Drag Handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: mutedColor.withOpacity(0.2),
+                color: mutedColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -62,7 +63,7 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
 
           // Title
           Text(
-            l10n.toolIsItNormal ?? "Is it Normal?",
+            l10n.toolIsItNormal,
             style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
           ),
 
@@ -76,7 +77,7 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
               // Keep orange for warning semantics, but softer
               color: const Color(0xFFFFF3E0),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -86,10 +87,7 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
                   child: Text(
                     l10n.normalDisclaimer,
                     style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.brown,
-                        fontSize: 11,
-                        height: 1.3
-                    ),
+                        color: Colors.brown, fontSize: 11, height: 1.3),
                   ),
                 ),
               ],
@@ -107,7 +105,7 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
               style: theme.textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: l10n.normalSearchHint,
-                hintStyle: TextStyle(color: mutedColor.withOpacity(0.5)),
+                hintStyle: TextStyle(color: mutedColor.withValues(alpha: 0.5)),
                 prefixIcon: Icon(Icons.search, color: mutedColor),
                 filled: true,
                 fillColor: cardColor, // Dynamic card color
@@ -169,10 +167,9 @@ class _SymptomCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
-                offset: const Offset(0, 4)
-            )
+                offset: const Offset(0, 4))
           ],
         ),
         child: Row(
@@ -199,16 +196,15 @@ class _SymptomCard extends StatelessWidget {
                         child: Text(
                           symptom.title,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16
-                          ),
+                              fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                       ),
                       // Status Badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
+                          color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -220,8 +216,7 @@ class _SymptomCard extends StatelessWidget {
                               style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: statusColor
-                              ),
+                                  color: statusColor),
                             ),
                           ],
                         ),
@@ -233,8 +228,7 @@ class _SymptomCard extends StatelessWidget {
                     symptom.shortDescription,
                     style: theme.textTheme.labelSmall?.copyWith(
                         fontSize: 13,
-                        color: mainTextColor.withOpacity(0.7)
-                    ),
+                        color: mainTextColor.withValues(alpha: 0.7)),
                   ),
                 ],
               ),
@@ -256,25 +250,34 @@ class _SymptomCard extends StatelessWidget {
 
   Color _getStatusColor(SymptomSeverity s, ThemeData theme) {
     switch (s) {
-      case SymptomSeverity.common: return theme.primaryColor; // Green/Blue/Peach depending on theme
-      case SymptomSeverity.monitor: return const Color(0xFFE6A23C); // Orange (Warning)
-      case SymptomSeverity.urgent: return const Color(0xFFF56C6C); // Red (Danger)
+      case SymptomSeverity.common:
+        return theme.primaryColor; // Green/Blue/Peach depending on theme
+      case SymptomSeverity.monitor:
+        return const Color(0xFFE6A23C); // Orange (Warning)
+      case SymptomSeverity.urgent:
+        return const Color(0xFFF56C6C); // Red (Danger)
     }
   }
 
   String _getStatusText(SymptomSeverity s, AppLocalizations l10n) {
     switch (s) {
-      case SymptomSeverity.common: return l10n.statusCommon;
-      case SymptomSeverity.monitor: return l10n.statusMonitor;
-      case SymptomSeverity.urgent: return l10n.statusUrgent;
+      case SymptomSeverity.common:
+        return l10n.statusCommon;
+      case SymptomSeverity.monitor:
+        return l10n.statusMonitor;
+      case SymptomSeverity.urgent:
+        return l10n.statusUrgent;
     }
   }
 
   IconData _getStatusIcon(SymptomSeverity s) {
     switch (s) {
-      case SymptomSeverity.common: return Icons.check_circle_outline;
-      case SymptomSeverity.monitor: return Icons.info_outline;
-      case SymptomSeverity.urgent: return Icons.add_alert_rounded;
+      case SymptomSeverity.common:
+        return Icons.check_circle_outline;
+      case SymptomSeverity.monitor:
+        return Icons.info_outline;
+      case SymptomSeverity.urgent:
+        return Icons.add_alert_rounded;
     }
   }
 }
@@ -303,19 +306,18 @@ class _SymptomDetailSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
-                color: mutedColor.withOpacity(0.2),
+                color: mutedColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 24),
 
-          Text(
-              symptom.title,
-              style: theme.textTheme.displayLarge?.copyWith(fontSize: 28)
-          ),
+          Text(symptom.title,
+              style: theme.textTheme.displayLarge?.copyWith(fontSize: 28)),
           const SizedBox(height: 16),
 
           // Body
@@ -323,7 +325,8 @@ class _SymptomDetailSheet extends StatelessWidget {
             child: SingleChildScrollView(
               child: Text(
                 symptom.fullDescription,
-                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16, height: 1.6),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontSize: 16, height: 1.6),
               ),
             ),
           ),
@@ -343,13 +346,13 @@ class _SymptomDetailSheet extends StatelessWidget {
                       backgroundColor: const Color(0xFFF56C6C),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                     icon: const Icon(Icons.call, color: Colors.white),
-                    label: Text(
-                        l10n.actionContactDoctor,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-                    ),
+                    label: Text(l10n.actionContactDoctor,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),

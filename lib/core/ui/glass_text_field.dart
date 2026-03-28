@@ -25,10 +25,11 @@ class GlassTextField extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.4), // Полупрозрачный фон (Glassmorphism обычно белый)
+        color: Colors.white.withValues(
+            alpha: 0.4), // Полупрозрачный фон (Glassmorphism обычно белый)
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white.withOpacity(0.6),
+          color: Colors.white.withValues(alpha: 0.6),
           width: 1,
         ),
       ),
@@ -45,7 +46,7 @@ class GlassTextField extends StatelessWidget {
           border: InputBorder.none,
           hintText: hintText,
           hintStyle: bodyStyle?.copyWith(
-            color: mutedColor.withOpacity(0.5),
+            color: mutedColor.withValues(alpha: 0.5),
             fontStyle: FontStyle.italic,
             fontSize: 18,
           ),

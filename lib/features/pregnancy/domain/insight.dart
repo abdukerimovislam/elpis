@@ -1,11 +1,6 @@
 // Убираем import 'package:flutter/material.dart';
 
-enum InsightType {
-  body,
-  mind,
-  action,
-  baby
-}
+enum InsightType { body, mind, action, baby }
 
 class Insight {
   final String id;

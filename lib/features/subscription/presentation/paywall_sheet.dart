@@ -1,7 +1,7 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 import '../../../l10n/app_localizations.dart';
 
 class PaywallSheet extends ConsumerWidget {
@@ -12,8 +12,33 @@ class PaywallSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final l10n = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-    final isAndroid = Platform.isAndroid;
+    final subtitle = isAndroid
+        ? (languageCode == 'ru'
+            ? 'Премиум-функции для Android пока готовятся.'
+            : 'Premium features for Android are still in development.')
+        : (languageCode == 'ru'
+            ? 'Поддержите разработку и откройте все возможности.'
+            : 'Support development and unlock all features.');
+
+    final backupFeature = languageCode == 'ru'
+        ? 'Полный облачный бэкап скоро появится'
+        : 'Full cloud backup coming soon';
+    final insightsFeature = languageCode == 'ru'
+        ? 'Расширенные health insights'
+        : 'Advanced health insights';
+    final noAdsFeature = languageCode == 'ru' ? 'Без рекламы' : 'No ads';
+    final statusTitle = isAndroid
+        ? (languageCode == 'ru'
+            ? 'Покупки для Android скоро появятся'
+            : 'Android purchases are coming soon')
+        : (languageCode == 'ru' ? 'Скоро появится' : 'Coming soon');
+    final statusBody = languageCode == 'ru'
+        ? 'Мы работаем над запуском Premium для всех пользователей.'
+        : 'We are working hard to bring Premium features to everyone.';
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -25,62 +50,59 @@ class PaywallSheet extends ConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 8),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(height: 24),
-
-          Text("Bloom Premium", style: theme.textTheme.displaySmall),
+          Text('Bloom Premium', style: theme.textTheme.displaySmall),
           const SizedBox(height: 12),
           Text(
-            // Текст зависит от платформы
-            isAndroid
-                ? "Pro version is currently in development for Android."
-                : "Support development and unlock all features.",
+            subtitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
-
           const SizedBox(height: 32),
-
-          // Показываем, что будет в Про версии (Маркетинг)
-          _buildFeature(context, Icons.picture_as_pdf_outlined, l10n.settingsExportPdf ?? "PDF Export"),
-          _buildFeature(context, Icons.backup_outlined, "Full Cloud Backup (Soon)"),
-          _buildFeature(context, Icons.insights, "Advanced Health Insights"),
-          _buildFeature(context, Icons.check_circle_outline, "No Ads (Always)"),
-
+          _buildFeature(
+            context,
+            Icons.picture_as_pdf_outlined,
+            l10n.settingsExportPdf,
+          ),
+          _buildFeature(context, Icons.backup_outlined, backupFeature),
+          _buildFeature(context, Icons.insights, insightsFeature),
+          _buildFeature(context, Icons.check_circle_outline, noAdsFeature),
           const Spacer(),
-
-          // --- ГЛАВНАЯ КНОПКА ---
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryColor.withOpacity(0.3)),
+              border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
                 Icon(Icons.construction, size: 40, color: primaryColor),
                 const SizedBox(height: 12),
                 Text(
-                  isAndroid
-                      ? "Payments are not yet available in your region."
-                      : "Coming Soon",
+                  statusTitle,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "We are working hard to bring Premium features to everyone. Stay tuned for updates!",
+                  statusBody,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
@@ -89,9 +111,11 @@ class PaywallSheet extends ConsumerWidget {
               elevation: 0,
               side: BorderSide(color: Colors.grey[300]!),
             ),
-            child: Text(l10n.commonUnderstood ?? "Understood", style: TextStyle(color: Colors.black87)),
+            child: Text(
+              l10n.commonUnderstood,
+              style: const TextStyle(color: Colors.black87),
+            ),
           ),
-
           const SizedBox(height: 20),
         ],
       ),
@@ -105,7 +129,12 @@ class PaywallSheet extends ConsumerWidget {
         children: [
           Icon(icon, color: Theme.of(context).primaryColor, size: 24),
           const SizedBox(width: 16),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
         ],
       ),
     );

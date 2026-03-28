@@ -41,12 +41,27 @@ class BumpRepository {
   Future<void> savePhoto(int week, String tempPath) async {
     final path = await _localPath;
     final extension = p.extension(tempPath);
-    final fileName = 'bump_week_$week\_${DateTime.now().millisecondsSinceEpoch}$extension';
+    final fileName =
+        'bump_week_${week}_${DateTime.now().millisecondsSinceEpoch}$extension';
     final permanentPath = p.join(path, fileName);
 
     await File(tempPath).copy(permanentPath);
 
     await _isar.writeTxn(() async {
+      final existing =
+          await _isar.bumpSnapshots.filter().weekEqualTo(week).findFirst();
+
+      if (existing != null) {
+        final oldFile = File(p.join(path, existing.fileName));
+        if (await oldFile.exists()) {
+          await oldFile.delete();
+        }
+        existing.fileName = fileName;
+        existing.date = DateTime.now();
+        await _isar.bumpSnapshots.put(existing);
+        return;
+      }
+
       await _isar.bumpSnapshots.put(BumpSnapshot(
         week: week,
         fileName: fileName,

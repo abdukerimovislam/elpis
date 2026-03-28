@@ -9,22 +9,26 @@ part 'contraction_timer_provider.g.dart';
 // Состояние таймера (простой класс данных)
 class TimerState {
   final bool isActive;
+  final bool isProcessing;
   final Duration duration;
   final Contraction? activeContraction;
 
   TimerState({
     this.isActive = false,
+    this.isProcessing = false,
     this.duration = Duration.zero,
     this.activeContraction,
   });
 
   TimerState copyWith({
     bool? isActive,
+    bool? isProcessing,
     Duration? duration,
     Contraction? activeContraction,
   }) {
     return TimerState(
       isActive: isActive ?? this.isActive,
+      isProcessing: isProcessing ?? this.isProcessing,
       duration: duration ?? this.duration,
       activeContraction: activeContraction ?? this.activeContraction,
     );
@@ -59,6 +63,7 @@ class ContractionTimer extends _$ContractionTimer {
 
       state = TimerState(
         isActive: true,
+        isProcessing: false,
         duration: duration,
         activeContraction: active,
       );
@@ -70,7 +75,8 @@ class ContractionTimer extends _$ContractionTimer {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (state.activeContraction != null) {
-        final duration = DateTime.now().difference(state.activeContraction!.startTime);
+        final duration =
+            DateTime.now().difference(state.activeContraction!.startTime);
         // Обновляем состояние каждую секунду
         state = state.copyWith(duration: duration);
       }
@@ -78,20 +84,38 @@ class ContractionTimer extends _$ContractionTimer {
   }
 
   Future<void> toggleTimer() async {
-    final repo = ref.read(pregnancyRepositoryProvider);
+    if (state.isProcessing) {
+      return;
+    }
 
-    if (state.isActive) {
-      // ОСТАНОВКА
-      if (state.activeContraction != null) {
-        await repo.stopContraction(state.activeContraction!.id);
+    final repo = ref.read(pregnancyRepositoryProvider);
+    state = state.copyWith(isProcessing: true);
+
+    try {
+      if (state.isActive) {
+        if (state.activeContraction != null) {
+          await repo.stopContraction(state.activeContraction!.id);
+        }
+        _ticker?.cancel();
+        state = TimerState(
+          isActive: false,
+          isProcessing: false,
+          duration: Duration.zero,
+          activeContraction: null,
+        );
+      } else {
+        final newContraction = await repo.startContraction();
+        state = TimerState(
+          isActive: true,
+          isProcessing: false,
+          duration: Duration.zero,
+          activeContraction: newContraction,
+        );
+        _startTicker();
       }
-      _ticker?.cancel();
-      state = TimerState(isActive: false, duration: Duration.zero, activeContraction: null);
-    } else {
-      // ЗАПУСК
-      final newContraction = await repo.startContraction();
-      state = TimerState(isActive: true, duration: Duration.zero, activeContraction: newContraction);
-      _startTicker();
+    } catch (_) {
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     }
   }
 }

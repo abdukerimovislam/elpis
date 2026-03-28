@@ -1,6 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../pregnancy/data/pregnancy_repository.dart';
-import '../../pregnancy/domain/pregnancy_settings.dart';
 
 part 'time_navigation_provider.g.dart';
 

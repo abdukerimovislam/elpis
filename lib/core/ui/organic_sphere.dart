@@ -19,7 +19,8 @@ class OrganicSphere extends StatefulWidget {
   State<OrganicSphere> createState() => _OrganicSphereState();
 }
 
-class _OrganicSphereState extends State<OrganicSphere> with SingleTickerProviderStateMixin {
+class _OrganicSphereState extends State<OrganicSphere>
+    with SingleTickerProviderStateMixin {
   ui.FragmentProgram? _program;
   late Ticker _ticker;
   double _time = 0.0;
@@ -35,13 +36,15 @@ class _OrganicSphereState extends State<OrganicSphere> with SingleTickerProvider
           _time = elapsed.inMilliseconds / 1000.0;
         });
       }
-    })..start();
+    })
+      ..start();
   }
 
   Future<void> _initShader() async {
     try {
       // Пытаемся загрузить шейдер
-      final program = await ui.FragmentProgram.fromAsset('assets/shaders/organic_cell.frag');
+      final program = await ui.FragmentProgram.fromAsset(
+          'assets/shaders/organic_cell.frag');
       if (mounted) {
         setState(() {
           _program = program;
@@ -77,7 +80,7 @@ class _OrganicSphereState extends State<OrganicSphere> with SingleTickerProvider
           ),
           boxShadow: [
             BoxShadow(
-              color: widget.colorEdge.withOpacity(0.3),
+              color: widget.colorEdge.withValues(alpha: 0.3),
               blurRadius: 30,
               spreadRadius: 5,
             )
@@ -125,15 +128,15 @@ class _OrganicShaderPainter extends CustomPainter {
     shader.setFloat(0, time);
     shader.setFloat(1, size.width);
     shader.setFloat(2, size.height);
-    shader.setFloat(3, c1.red / 255);
-    shader.setFloat(4, c1.green / 255);
-    shader.setFloat(5, c1.blue / 255);
-    shader.setFloat(6, c2.red / 255);
-    shader.setFloat(7, c2.green / 255);
-    shader.setFloat(8, c2.blue / 255);
-    shader.setFloat(9, c3.red / 255);
-    shader.setFloat(10, c3.green / 255);
-    shader.setFloat(11, c3.blue / 255);
+    shader.setFloat(3, c1.r);
+    shader.setFloat(4, c1.g);
+    shader.setFloat(5, c1.b);
+    shader.setFloat(6, c2.r);
+    shader.setFloat(7, c2.g);
+    shader.setFloat(8, c2.b);
+    shader.setFloat(9, c3.r);
+    shader.setFloat(10, c3.g);
+    shader.setFloat(11, c3.b);
 
     final paint = Paint()..shader = shader;
     canvas.drawRect(Offset.zero & size, paint);

@@ -1,13 +1,13 @@
 import 'package:isar/isar.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart'; // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
 import '../domain/health_record.dart';
-import '../../../main.dart'; // Доступ к isarInstance
+import '../../pregnancy/data/pregnancy_repository.dart';
 
 part 'health_repository.g.dart';
 
 @riverpod
 HealthRepository healthRepository(HealthRepositoryRef ref) {
-  return HealthRepository(isarInstance);
+  return HealthRepository(ref.watch(isarDatabaseProvider).requireValue);
 }
 
 class HealthRepository {
@@ -15,22 +15,20 @@ class HealthRepository {
 
   HealthRepository(this._isar);
 
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
   // Получить запись за конкретный день (или создать пустую)
   Future<HealthRecord> getRecordForDate(DateTime date) async {
-    // Округляем до начала дня
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final day = _normalizeDate(date);
 
-    final record = await _isar.healthRecords
-        .filter()
-        .dateGreaterThan(startOfDay, include: true)
-        .and()
-        .dateLessThan(endOfDay)
-        .findFirst();
+    final record =
+        await _isar.healthRecords.filter().dateEqualTo(day).findFirst();
 
     if (record != null) return record;
 
-    return HealthRecord(date: DateTime.now());
+    return HealthRecord(date: day);
   }
 
   Future<void> addWaterGlass(DateTime date) async {
@@ -51,7 +49,8 @@ class HealthRepository {
     });
   }
 
-  Future<void> saveKickSession({required DateTime date, required int kicks}) async {
+  Future<void> saveKickSession(
+      {required DateTime date, required int kicks}) async {
     await _isar.writeTxn(() async {
       final record = await _getOrCreateRecordInternal(date);
       record.totalKicks += kicks;
@@ -61,40 +60,30 @@ class HealthRepository {
   }
 
   Future<HealthRecord> _getOrCreateRecordInternal(DateTime date) async {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final day = _normalizeDate(date);
 
-    final existing = await _isar.healthRecords
-        .filter()
-        .dateGreaterThan(startOfDay, include: true)
-        .and()
-        .dateLessThan(endOfDay)
-        .findFirst();
+    final existing =
+        await _isar.healthRecords.filter().dateEqualTo(day).findFirst();
 
     if (existing != null) return existing;
 
-    return HealthRecord(date: DateTime.now());
+    return HealthRecord(date: day);
   }
 
-
-  Future<void> saveWeight({required DateTime date, required double weight}) async {
+  Future<void> saveWeight(
+      {required DateTime date, required double weight}) async {
     await _isar.writeTxn(() async {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
+      final day = _normalizeDate(date);
 
-      var existing = await _isar.healthRecords
-          .filter()
-          .dateGreaterThan(startOfDay, include: true)
-          .and()
-          .dateLessThan(endOfDay)
-          .findFirst();
+      var existing =
+          await _isar.healthRecords.filter().dateEqualTo(day).findFirst();
 
       if (existing != null) {
         existing.weightKg = weight;
         await _isar.healthRecords.put(existing);
       } else {
         final newRecord = HealthRecord(
-          date: DateTime.now(),
+          date: day,
           weightKg: weight,
           waterGlasses: 0,
         );
@@ -104,14 +93,11 @@ class HealthRepository {
   }
 
   // Сохранить симптомы и настроение
-  Future<void> saveSymptoms({
-    required DateTime date,
-    required List<String> symptoms,
-    required int mood
-  }) async {
+  Future<void> saveSymptoms(
+      {required DateTime date,
+      required List<String> symptoms,
+      required int mood}) async {
     await _isar.writeTxn(() async {
-      // Ищем запись за этот день
-      final startOfDay = DateTime(date.year, date.month, date.day);
       final existing = await getRecordForDate(date);
 
       // Если запись новая (id autoIncrement), Isar создаст новую.
@@ -124,7 +110,7 @@ class HealthRepository {
       if (existing.id == Isar.autoIncrement) {
         // Это новая запись
         recordToSave = HealthRecord(
-          date: DateTime.now(),
+          date: _normalizeDate(date),
           symptoms: symptoms,
           moodRating: mood,
         );

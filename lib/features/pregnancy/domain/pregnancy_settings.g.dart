@@ -81,6 +81,11 @@ const PregnancySettingsSchema = CollectionSchema(
       id: 12,
       name: r'themeKey',
       type: IsarType.string,
+    ),
+    r'visualModeKey': PropertySchema(
+      id: 13,
+      name: r'visualModeKey',
+      type: IsarType.string,
     )
   },
   estimateSize: _pregnancySettingsEstimateSize,
@@ -135,6 +140,7 @@ int _pregnancySettingsEstimateSize(
     }
   }
   bytesCount += 3 + object.themeKey.length * 3;
+  bytesCount += 3 + object.visualModeKey.length * 3;
   return bytesCount;
 }
 
@@ -157,6 +163,7 @@ void _pregnancySettingsSerialize(
   writer.writeString(offsets[10], object.partnerPhone);
   writer.writeDouble(offsets[11], object.prePregnancyWeightKg);
   writer.writeString(offsets[12], object.themeKey);
+  writer.writeString(offsets[13], object.visualModeKey);
 }
 
 PregnancySettings _pregnancySettingsDeserialize(
@@ -165,19 +172,22 @@ PregnancySettings _pregnancySettingsDeserialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
+  final legacyIsFruitMode = reader.readBoolOrNull(offsets[6]) ?? true;
   final object = PregnancySettings(
     babyName: reader.readStringOrNull(offsets[0]),
     doctorPhone: reader.readStringOrNull(offsets[2]),
     estimatedDueDate: reader.readDateTime(offsets[3]),
     heightCm: reader.readDoubleOrNull(offsets[4]),
     hospitalAddress: reader.readStringOrNull(offsets[5]),
-    isFruitMode: reader.readBoolOrNull(offsets[6]) ?? true,
+    isFruitMode: legacyIsFruitMode,
     isLaborMode: reader.readBoolOrNull(offsets[7]) ?? false,
     languageCode: reader.readStringOrNull(offsets[8]) ?? 'en',
     partnerName: reader.readStringOrNull(offsets[9]),
     partnerPhone: reader.readStringOrNull(offsets[10]),
     prePregnancyWeightKg: reader.readDoubleOrNull(offsets[11]),
     themeKey: reader.readStringOrNull(offsets[12]) ?? 'serenity',
+    visualModeKey: reader.readStringOrNull(offsets[13]) ??
+        (legacyIsFruitMode ? 'fruit' : 'realistic'),
   );
   object.id = id;
   return object;

@@ -1,30 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:ui'; // Для FontFeature
 
-// ИМПОРТ ЛОКАЛИЗАЦИИ
 import '../../../l10n/app_localizations.dart';
-
-// ИМПОРТЫ ДАННЫХ
 import '../../health/data/contraction_timer_provider.dart';
-import '../../pregnancy/data/pregnancy_repository.dart';
 import '../../health/domain/contraction.dart';
+import '../../pregnancy/data/pregnancy_repository.dart';
 
 class LaborContractionTimer extends ConsumerStatefulWidget {
   const LaborContractionTimer({super.key});
 
   @override
-  ConsumerState<LaborContractionTimer> createState() => _LaborContractionTimerState();
+  ConsumerState<LaborContractionTimer> createState() =>
+      _LaborContractionTimerState();
 }
 
-class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> with SingleTickerProviderStateMixin {
+class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
-    // Анимация дыхания (2 сек вдох, 2 сек выдох)
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -37,25 +34,21 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
     super.dispose();
   }
 
-  String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final minutes = twoDigits(d.inMinutes.remainder(60));
-    final seconds = twoDigits(d.inSeconds.remainder(60));
-    return "$minutes:$seconds";
+  String _formatDuration(Duration duration) {
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    // 1. Получаем состояние таймера (секунды, активен ли)
     final timerState = ref.watch(contractionTimerProvider);
     final isRunning = timerState.isActive;
+    final contractionsStream =
+        ref.watch(pregnancyRepositoryProvider).watchContractions();
 
-    // 2. Получаем поток истории схваток
-    final contractionsStream = ref.watch(pregnancyRepositoryProvider).watchContractions();
-
-    // Логика анимации
     if (isRunning && !_pulseController.isAnimating) {
       _pulseController.repeat(reverse: true);
     } else if (!isRunning && _pulseController.isAnimating) {
@@ -63,15 +56,13 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
       _pulseController.reset();
     }
 
-    // Цвета
-    final activeColor = const Color(0xFFFF9A9E);
-    final restColor = const Color(0xFFa1c4fd);
+    const activeColor = Color(0xFFFF9A9E);
+    const restColor = Color(0xFFa1c4fd);
     final currentColor = isRunning ? activeColor : restColor;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // --- ЗАГОЛОВОК ---
         Text(
           isRunning ? l10n.laborTimerContraction : l10n.laborTimerResting,
           style: TextStyle(
@@ -82,8 +73,6 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
           ),
         ),
         const SizedBox(height: 8),
-
-        // --- ЦИФРЫ ТАЙМЕРА ---
         Text(
           _formatDuration(timerState.duration),
           style: const TextStyle(
@@ -93,20 +82,28 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
             color: Color(0xFF2D3142),
           ),
         ),
-
         const Spacer(),
-
-        // --- ДЫШАЩАЯ КНОПКА (THE ZEN BUTTON) ---
         GestureDetector(
-          onTap: () {
-            HapticFeedback.heavyImpact();
-            // Вызываем метод переключения таймера
-            ref.read(contractionTimerProvider.notifier).toggleTimer();
-          },
+          onTap: timerState.isProcessing
+              ? null
+              : () async {
+                  HapticFeedback.heavyImpact();
+                  try {
+                    await ref
+                        .read(contractionTimerProvider.notifier)
+                        .toggleTimer();
+                  } catch (_) {
+                    if (!context.mounted) {
+                      return;
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.errorGeneric)),
+                    );
+                  }
+                },
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Аура (только при активности)
               if (isRunning)
                 AnimatedBuilder(
                   animation: _pulseController,
@@ -118,14 +115,14 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
                         height: 220,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: activeColor.withOpacity(0.2 - (_pulseController.value * 0.15)),
+                          color: activeColor.withValues(
+                            alpha: 0.2 - (_pulseController.value * 0.15),
+                          ),
                         ),
                       ),
                     );
                   },
                 ),
-
-              // Сама кнопка
               AnimatedContainer(
                 duration: const Duration(milliseconds: 500),
                 width: 200,
@@ -141,7 +138,7 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: currentColor.withOpacity(0.4),
+                      color: currentColor.withValues(alpha: 0.4),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -156,14 +153,30 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                        size: 60,
-                        color: Colors.white,
-                      ),
+                      if (timerState.isProcessing)
+                        const SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      else
+                        Icon(
+                          isRunning
+                              ? Icons.stop_rounded
+                              : Icons.play_arrow_rounded,
+                          size: 60,
+                          color: Colors.white,
+                        ),
                       const SizedBox(height: 8),
                       Text(
-                        isRunning ? l10n.laborTimerBreathe : l10n.laborTimerStart,
+                        timerState.isProcessing
+                            ? l10n.commonSave
+                            : isRunning
+                                ? l10n.laborTimerBreathe
+                                : l10n.laborTimerStart,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -178,35 +191,38 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
             ],
           ),
         ),
-
         const Spacer(),
-
-        // --- ИСТОРИЯ (STREAM BUILDER) ---
         StreamBuilder<List<Contraction>>(
           stream: contractionsStream,
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return SizedBox(height: 60, child: Center(child: Text(l10n.laborTimerReady)));
+              return SizedBox(
+                height: 60,
+                child: Center(child: Text(l10n.laborTimerReady)),
+              );
             }
 
             final history = snapshot.data!;
-            // Ищем последнюю ЗАВЕРШЕННУЮ схватку
-            final lastCompleted = history.where((c) => c.endTime != null).firstOrNull;
+            final lastCompleted = history
+                .where((contraction) => contraction.endTime != null)
+                .firstOrNull;
 
             if (lastCompleted == null) {
-              return SizedBox(height: 60, child: Center(child: Text(l10n.laborTimerMonitoring)));
+              return SizedBox(
+                height: 60,
+                child: Center(child: Text(l10n.laborTimerMonitoring)),
+              );
             }
 
-            // Длительность последней схватки
-            final duration = lastCompleted.endTime!.difference(lastCompleted.startTime);
+            final duration =
+                lastCompleted.endTime!.difference(lastCompleted.startTime);
 
-            // Расчет частоты (если есть хотя бы 2 схватки)
-            String freqText = "--";
+            String frequencyText = '--';
             if (history.length >= 2) {
               final lastStart = history[0].startTime;
-              final prevStart = history[1].startTime;
-              final diff = lastStart.difference(prevStart);
-              freqText = "${diff.inMinutes} ${l10n.commonMinutes}"; // Добавил локализацию мин
+              final previousStart = history[1].startTime;
+              final difference = lastStart.difference(previousStart);
+              frequencyText = '${difference.inMinutes} ${l10n.commonMinutes}';
             }
 
             return Container(
@@ -214,20 +230,27 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildStatItem(l10n.laborTimerLastDuration, "${duration.inSeconds} ${l10n.commonSeconds}"),
-                  Container(height: 30, width: 1, color: Colors.grey[300], margin: const EdgeInsets.symmetric(horizontal: 20)),
-                  _buildStatItem(l10n.laborTimerFrequency, freqText),
+                  _buildStatItem(
+                    l10n.laborTimerLastDuration,
+                    '${duration.inSeconds} ${l10n.commonSeconds}',
+                  ),
+                  Container(
+                    height: 30,
+                    width: 1,
+                    color: Colors.grey[300],
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                  _buildStatItem(l10n.laborTimerFrequency, frequencyText),
                 ],
               ),
             );
           },
         ),
-
         const SizedBox(height: 20),
       ],
     );
@@ -236,8 +259,22 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer> w
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF2D3142))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2D3142),
+          ),
+        ),
       ],
     );
   }

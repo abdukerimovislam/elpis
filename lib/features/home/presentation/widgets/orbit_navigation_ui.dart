@@ -6,18 +6,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../pregnancy/domain/pregnancy_settings.dart';
 
-// --- ПОМОЩНИК ДЛЯ SVG ---
+// --- ÐŸÐžÐœÐžÐ©ÐÐ˜Ðš Ð”Ð›Ð¯ SVG ---
 class BloomIcon extends StatelessWidget {
   final String assetPath;
   final Color color;
   final double size;
 
   const BloomIcon(
-      this.assetPath, {
-        super.key,
-        required this.color,
-        this.size = 24,
-      });
+    this.assetPath, {
+    super.key,
+    required this.color,
+    this.size = 24,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +55,12 @@ class OrbitAppBar extends StatelessWidget {
     final cardColor = theme.cardColor;
 
     final topPadding = MediaQuery.of(context).padding.top;
-    final double barHeight = topPadding + 60; // Чуть компактнее
+    final double barHeight = topPadding + 60; // Ð§ÑƒÑ‚ÑŒ ÐºÐ¾Ð¼Ð¿Ð°ÐºÑ‚Ð½ÐµÐµ
 
     return Positioned(
-      top: 0, left: 0, right: 0,
+      top: 0,
+      left: 0,
+      right: 0,
       child: IgnorePointer(
         ignoring: depthOpacity == 0,
         child: AnimatedOpacity(
@@ -70,8 +72,11 @@ class OrbitAppBar extends StatelessWidget {
               child: Container(
                 height: barHeight,
                 decoration: BoxDecoration(
-                  color: scaffoldBg.withOpacity(0.6),
-                  border: Border(bottom: BorderSide(color: Colors.black.withOpacity(0.03), width: 0.5)),
+                  color: scaffoldBg.withValues(alpha: 0.6),
+                  border: Border(
+                      bottom: BorderSide(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          width: 0.5)),
                 ),
                 padding: EdgeInsets.only(
                   top: topPadding,
@@ -79,11 +84,12 @@ class OrbitAppBar extends StatelessWidget {
                   right: 24,
                   bottom: 8,
                 ),
-                // ИСПОЛЬЗУЕМ STACK ВМЕСТО ROW ДЛЯ ИДЕАЛЬНОГО ЦЕНТРА
+                // Ð˜Ð¡ÐŸÐžÐ›Ð¬Ð—Ð£Ð•Ðœ STACK Ð’ÐœÐ•Ð¡Ð¢Ðž ROW Ð”Ð›Ð¯ Ð˜Ð”Ð•ÐÐ›Ð¬ÐÐžÐ“Ðž Ð¦Ð•ÐÐ¢Ð Ð
                 child: Stack(
-                  alignment: Alignment.center, // Центрирует профиль
+                  alignment:
+                      Alignment.center, // Ð¦ÐµÐ½Ñ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ
                   children: [
-                    // ЛЕВО: Переключатель режима
+                    // Ð›Ð•Ð’Ðž: ÐŸÐµÑ€ÐµÐºÐ»ÑŽÑ‡Ð°Ñ‚ÐµÐ»ÑŒ Ñ€ÐµÐ¶Ð¸Ð¼Ð°
                     Positioned(
                       left: 0,
                       child: GestureDetector(
@@ -92,27 +98,33 @@ class OrbitAppBar extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: cardColor.withOpacity(0.5),
+                            color: cardColor.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
-                            border: Border.all(color: cardColor.withOpacity(0.8)),
+                            border: Border.all(
+                                color: cardColor.withValues(alpha: 0.8)),
                           ),
                         ),
                       ),
                     ),
 
-                    // ЦЕНТР: Профиль (Встает по центру благодаря Stack alignment)
+                    // Ð¦Ð•ÐÐ¢Ð : ÐŸÑ€Ð¾Ñ„Ð¸Ð»ÑŒ (Ð’ÑÑ‚Ð°ÐµÑ‚ Ð¿Ð¾ Ñ†ÐµÐ½Ñ‚Ñ€Ñƒ Ð±Ð»Ð°Ð³Ð¾Ð´Ð°Ñ€Ñ Stack alignment)
                     GestureDetector(
                       onTap: onSettingsTap,
                       child: Container(
-                        width: 44, height: 44,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: scaffoldBg,
-                            border: Border.all(color: primaryColor.withOpacity(0.3), width: 2),
+                            border: Border.all(
+                                color: primaryColor.withValues(alpha: 0.3),
+                                width: 2),
                             boxShadow: [
-                              BoxShadow(color: primaryColor.withOpacity(0.1), blurRadius: 10, spreadRadius: 2)
-                            ]
-                        ),
+                              BoxShadow(
+                                  color: primaryColor.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 2)
+                            ]),
                         child: ClipOval(
                           child: Image.asset(
                             'assets/images/profile.png',
@@ -120,7 +132,8 @@ class OrbitAppBar extends StatelessWidget {
                             height: 44,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.person, color: primaryColor.withOpacity(0.5));
+                              return Icon(Icons.person,
+                                  color: primaryColor.withValues(alpha: 0.5));
                             },
                           ),
                         ),
@@ -157,10 +170,11 @@ class OrbitNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final navBgColor = theme.cardColor.withOpacity(0.85);
+    final navBgColor = theme.cardColor.withValues(alpha: 0.85);
 
     return Positioned(
-      bottom: 32, // Чуть выше от края для современных iPhone
+      bottom:
+          32, // Ð§ÑƒÑ‚ÑŒ Ð²Ñ‹ÑˆÐµ Ð¾Ñ‚ ÐºÑ€Ð°Ñ Ð´Ð»Ñ ÑÐ¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… iPhone
       left: 24,
       right: 24,
       child: ClipRRect(
@@ -172,15 +186,15 @@ class OrbitNavBar extends StatelessWidget {
             decoration: BoxDecoration(
                 color: navBgColor,
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   )
-                ]
-            ),
+                ]),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -188,22 +202,17 @@ class OrbitNavBar extends StatelessWidget {
                     icon: CupertinoIcons.square_grid_2x2,
                     label: labelTools,
                     isActive: false,
-                    onTap: onToolsTap
-                ),
-
+                    onTap: onToolsTap),
                 _NavItem(
                     icon: CupertinoIcons.house_alt,
                     label: labelHome,
                     isActive: true,
-                    onTap: () {}
-                ),
-
+                    onTap: () {}),
                 _NavItem(
                     icon: CupertinoIcons.book,
                     label: labelDiary,
                     isActive: false,
-                    onTap: onDiaryTap
-                ),
+                    onTap: onDiaryTap),
               ],
             ),
           ),
@@ -232,7 +241,7 @@ class _NavItem extends StatelessWidget {
     final primaryColor = theme.primaryColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
 
-    final color = isActive ? primaryColor : mutedColor.withOpacity(0.5);
+    final color = isActive ? primaryColor : mutedColor.withValues(alpha: 0.5);
     final scale = isActive ? 1.2 : 1.0;
 
     return GestureDetector(

@@ -10,23 +10,25 @@ part 'name_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 NameRepository nameRepository(NameRepositoryRef ref) {
-  final isarAsync = ref.watch(isarDatabaseProvider);
-  if (isarAsync.isLoading || isarAsync.hasError) {
-    throw UnimplementedError('Database not ready');
-  }
-  return NameRepository(isarAsync.requireValue);
+  return NameRepository(ref.watch(isarDatabaseProvider).valueOrNull);
 }
 
 class NameRepository {
-  final Isar _isar;
+  final Isar? _isar;
 
   NameRepository(this._isar);
+
+  bool get isReady => _isar != null;
 
   // 1. ПОЛУЧЕНИЕ ИМЕН С ФИЛЬТРАМИ
   Future<List<BabyName>> getNamesToSwipe({
     NameGender? gender,
     List<String>? nationalities,
   }) async {
+    if (_isar == null) {
+      return const [];
+    }
+
     var query = _isar.babyNames.filter().voteEqualTo(NameVote.none);
 
     if (gender != null) {
@@ -34,7 +36,8 @@ class NameRepository {
     }
 
     if (nationalities != null && nationalities.isNotEmpty) {
-      query = query.anyOf(nationalities, (q, nation) => q.nationalityEqualTo(nation));
+      query = query.anyOf(
+          nationalities, (q, nation) => q.nationalityEqualTo(nation));
     }
 
     // Лимит 50 имен за раз для производительности UI
@@ -45,6 +48,10 @@ class NameRepository {
 
   // 2. ИЗБРАННОЕ (Стрим для UI)
   Stream<List<BabyName>> watchLikedNames() {
+    if (_isar == null) {
+      return Stream.value(const []);
+    }
+
     return _isar.babyNames
         .filter()
         .voteEqualTo(NameVote.liked)
@@ -52,32 +59,50 @@ class NameRepository {
   }
 
   // 3. ГОЛОСОВАНИЕ
-  Future<void> voteName(int id, NameVote vote) async {
+  Future<bool> voteName(int id, NameVote vote) async {
+    if (_isar == null) {
+      return false;
+    }
+
     try {
+      var didUpdate = false;
       await _isar.writeTxn(() async {
         final item = await _isar.babyNames.get(id);
         if (item != null) {
           item.vote = vote;
           await _isar.babyNames.put(item);
+          didUpdate = true;
         }
       });
+      return didUpdate;
     } catch (e) {
       debugPrint("Vote Error: $e");
+      return false;
     }
   }
 
   // 4. СПИСОК ДОСТУПНЫХ СТРАН (Уникальные значения из БД)
   Future<List<String>> getAvailableNationalities() async {
-    final list = await _isar.babyNames.where().distinctByNationality().findAll();
+    if (_isar == null) {
+      return const [];
+    }
+
+    final list =
+        await _isar.babyNames.where().distinctByNationality().findAll();
 
     return list
         .map((e) => e.nationality)
-        .where((code) => code.toLowerCase() != 'nationality' && code.length == 2)
+        .where(
+            (code) => code.toLowerCase() != 'nationality' && code.length == 2)
         .toList();
   }
 
   // 5. ИНИЦИАЛИЗАЦИЯ (ОПТИМИЗИРОВАННЫЙ ИМПОРТ)
   Future<void> ensureInitialized() async {
+    if (_isar == null) {
+      return;
+    }
+
     final count = await _isar.babyNames.count();
 
     if (count == 0) {
@@ -102,7 +127,8 @@ class NameRepository {
         // РАЗБИВАЕМ НА ЧАНКИ (по 500 имен), чтобы не забить память
         const int chunkSize = 500;
         for (var i = 0; i < rows.length; i += chunkSize) {
-          final chunk = rows.sublist(i, i + chunkSize > rows.length ? rows.length : i + chunkSize);
+          final chunk = rows.sublist(
+              i, i + chunkSize > rows.length ? rows.length : i + chunkSize);
 
           final namesToInsert = chunk.map((row) {
             return BabyName(
@@ -112,9 +138,9 @@ class NameRepository {
               gender: _parseGender(row[3].toString().trim()),
               nationality: row[4].toString().trim().toLowerCase(),
               language: _getVal(row, 5),
-              script:   _getVal(row, 6),
-              era:      _getVal(row, 7),
-              notes:    _getVal(row, 8),
+              script: _getVal(row, 6),
+              era: _getVal(row, 7),
+              notes: _getVal(row, 8),
               vote: NameVote.none,
             );
           }).toList();
@@ -123,13 +149,14 @@ class NameRepository {
             await _isar.babyNames.putAll(namesToInsert);
           });
 
-          debugPrint("✅ Загружено ${i + namesToInsert.length} / ${rows.length}");
+          debugPrint(
+              "✅ Загружено ${i + namesToInsert.length} / ${rows.length}");
         }
 
         debugPrint("🎉 Импорт полностью завершен.");
-
       } catch (e) {
         debugPrint("❌ Критическая ошибка импорта: $e");
+        rethrow;
       }
     }
   }

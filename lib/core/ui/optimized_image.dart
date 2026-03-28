@@ -49,9 +49,10 @@ class OptimizedImage extends StatelessWidget {
         return Container(
           width: width,
           height: height,
-          color: Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(alpha: 0.1),
           child: const Center(
-            child: Icon(Icons.broken_image_rounded, color: Colors.grey, size: 24),
+            child:
+                Icon(Icons.broken_image_rounded, color: Colors.grey, size: 24),
           ),
         );
       },

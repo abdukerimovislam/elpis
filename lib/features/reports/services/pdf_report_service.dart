@@ -39,7 +39,8 @@ class PdfReportService {
   static const PdfColor _textColor = PdfColor.fromInt(0xFF333333);
   static const PdfColor _lightGrey = PdfColor.fromInt(0xFFF5F5F5);
 
-  Future<Uint8List> generateReport(ReportData data, String locale, AppLocalizations l10n) async {
+  Future<Uint8List> generateReport(
+      ReportData data, String locale, AppLocalizations l10n) async {
     final doc = pw.Document();
 
     final fontRegular = await PdfGoogleFonts.robotoRegular();
@@ -77,7 +78,8 @@ class PdfReportService {
 
   // --- WIDGETS ---
 
-  pw.Widget _buildHeader(ReportData data, DateFormat fmt, AppLocalizations l10n) {
+  pw.Widget _buildHeader(
+      ReportData data, DateFormat fmt, AppLocalizations l10n) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -125,14 +127,17 @@ class PdfReportService {
       children: [
         pw.Text(value.isEmpty ? " " : value,
             style: pw.TextStyle(
-                fontSize: 20, fontWeight: pw.FontWeight.bold, color: _textColor)),
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+                color: _textColor)),
         pw.Text(label,
             style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
       ],
     );
   }
 
-  pw.Widget _buildWeightSection(List<WeightEntry> history, DateFormat fmt, AppLocalizations l10n) {
+  pw.Widget _buildWeightSection(
+      List<WeightEntry> history, DateFormat fmt, AppLocalizations l10n) {
     if (history.isEmpty) return pw.Container();
 
     List<List<String>> tableData = [];
@@ -143,11 +148,8 @@ class PdfReportService {
       // Логика расчета разницы веса (опционально)
       // if (i < history.length - 1) { ... }
 
-      tableData.add([
-        fmt.format(item.date),
-        item.value.toStringAsFixed(1),
-        change
-      ]);
+      tableData
+          .add([fmt.format(item.date), item.value.toStringAsFixed(1), change]);
     }
 
     return pw.Column(
@@ -159,9 +161,12 @@ class PdfReportService {
         pw.TableHelper.fromTextArray(
           headers: [l10n.dateLabel, l10n.weightUnitLabel, l10n.changeLabel],
           data: tableData,
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+          headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold, color: PdfColors.white),
           headerDecoration: const pw.BoxDecoration(color: _primaryColor),
-          rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
+          rowDecoration: const pw.BoxDecoration(
+              border:
+                  pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
           cellAlignment: pw.Alignment.centerLeft,
           cellPadding: const pw.EdgeInsets.all(5),
         ),
@@ -169,7 +174,8 @@ class PdfReportService {
     );
   }
 
-  pw.Widget _buildKicksSection(List<KickSession> history, DateFormat fmt, AppLocalizations l10n) {
+  pw.Widget _buildKicksSection(
+      List<KickSession> history, DateFormat fmt, AppLocalizations l10n) {
     if (history.isEmpty) return pw.Container();
 
     return pw.Column(
@@ -180,21 +186,27 @@ class PdfReportService {
         pw.SizedBox(height: 10),
         pw.TableHelper.fromTextArray(
           headers: [l10n.dateLabel, l10n.durationLabel, l10n.kickCountLabel],
-          data: history.map((e) => [
-            fmt.format(e.date),
-            "${(e.durationSeconds / 60).toStringAsFixed(0)} min",
-            "${e.count}",
-          ]).toList(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+          data: history
+              .map((e) => [
+                    fmt.format(e.date),
+                    "${(e.durationSeconds / 60).toStringAsFixed(0)} min",
+                    "${e.count}",
+                  ])
+              .toList(),
+          headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold, color: PdfColors.white),
           headerDecoration: const pw.BoxDecoration(color: _primaryColor),
-          rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
+          rowDecoration: const pw.BoxDecoration(
+              border:
+                  pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
           cellAlignment: pw.Alignment.centerLeft,
         ),
       ],
     );
   }
 
-  pw.Widget _buildSymptomsSection(List<String> symptoms, AppLocalizations l10n) {
+  pw.Widget _buildSymptomsSection(
+      List<String> symptoms, AppLocalizations l10n) {
     if (symptoms.isEmpty) return pw.Container();
 
     return pw.Column(
@@ -206,14 +218,17 @@ class PdfReportService {
         pw.Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: symptoms.map((s) => pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: _primaryColor),
-              borderRadius: pw.BorderRadius.circular(10),
-            ),
-            child: pw.Text(s),
-          )).toList(),
+          children: symptoms
+              .map((s) => pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: _primaryColor),
+                      borderRadius: pw.BorderRadius.circular(10),
+                    ),
+                    child: pw.Text(s),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -227,8 +242,7 @@ class PdfReportService {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text(
-                l10n.pdfDisclaimer,
+            pw.Text(l10n.pdfDisclaimer,
                 style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),
             pw.Text("${context.pageNumber} / ${context.pagesCount}",
                 style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey)),

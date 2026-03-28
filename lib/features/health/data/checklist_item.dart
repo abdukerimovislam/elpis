@@ -6,9 +6,9 @@ part 'checklist_item.g.dart';
 class ChecklistItem {
   Id id;
 
-  String title;       // Название (например, "Паспорт")
-  String category;    // Категория (docs, mom, baby, other)
-  bool isCompleted;   // Галочка
+  String title; // Название (например, "Паспорт")
+  String category; // Категория (docs, mom, baby, other)
+  bool isCompleted; // Галочка
 
   ChecklistItem({
     this.id = Isar.autoIncrement,

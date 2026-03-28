@@ -4,6 +4,10 @@ part 'pregnancy_settings.g.dart';
 
 @collection
 class PregnancySettings {
+  static const String visualModeFruit = 'fruit';
+  static const String visualModeRealistic = 'realistic';
+  static const String visualModeGrowth = 'growth';
+
   Id id = Isar.autoIncrement;
 
   DateTime estimatedDueDate;
@@ -15,9 +19,8 @@ class PregnancySettings {
   String themeKey;
 
   bool isFruitMode;
+  String visualModeKey;
   bool isLaborMode;
-
-  // 🔥 НОВОЕ ПОЛЕ: Показывать ли кнопку родов
   bool showLaborButton;
 
   String? partnerName;
@@ -31,10 +34,11 @@ class PregnancySettings {
     this.prePregnancyWeightKg,
     this.heightCm,
     this.languageCode = 'en',
-    this.isFruitMode = true,
     this.themeKey = 'serenity',
+    this.isFruitMode = true,
+    this.visualModeKey = visualModeFruit,
     this.isLaborMode = false,
-    this.showLaborButton = true, // По умолчанию true
+    this.showLaborButton = true,
     this.partnerName,
     this.partnerPhone,
     this.doctorPhone,
@@ -47,9 +51,15 @@ class PregnancySettings {
     double? prePregnancyWeightKg,
     double? heightCm,
     String? languageCode,
-    bool? isFruitMode,
     String? themeKey,
-    bool? showLaborButton, // Аргумент
+    bool? isFruitMode,
+    String? visualModeKey,
+    bool? showLaborButton,
+    bool? isLaborMode,
+    String? partnerName,
+    String? partnerPhone,
+    String? doctorPhone,
+    String? hospitalAddress,
   }) {
     final newSettings = PregnancySettings(
       estimatedDueDate: estimatedDueDate ?? this.estimatedDueDate,
@@ -57,26 +67,39 @@ class PregnancySettings {
       prePregnancyWeightKg: prePregnancyWeightKg ?? this.prePregnancyWeightKg,
       heightCm: heightCm ?? this.heightCm,
       languageCode: languageCode ?? this.languageCode,
-      isFruitMode: isFruitMode ?? this.isFruitMode,
       themeKey: themeKey ?? this.themeKey,
-      isLaborMode: this.isLaborMode,
-      showLaborButton: showLaborButton ?? this.showLaborButton, // Копируем
-      partnerName: this.partnerName,
-      partnerPhone: this.partnerPhone,
-      doctorPhone: this.doctorPhone,
-      hospitalAddress: this.hospitalAddress,
+      isFruitMode: isFruitMode ?? this.isFruitMode,
+      visualModeKey: visualModeKey ?? this.visualModeKey,
+      isLaborMode: isLaborMode ?? this.isLaborMode,
+      showLaborButton: showLaborButton ?? this.showLaborButton,
+      partnerName: partnerName ?? this.partnerName,
+      partnerPhone: partnerPhone ?? this.partnerPhone,
+      doctorPhone: doctorPhone ?? this.doctorPhone,
+      hospitalAddress: hospitalAddress ?? this.hospitalAddress,
     );
-    newSettings.id = this.id;
+    newSettings.id = id;
     return newSettings;
   }
 
   factory PregnancySettings.defaults() {
     return PregnancySettings(
       estimatedDueDate: DateTime.now().add(const Duration(days: 280)),
-      isFruitMode: true,
       themeKey: 'serenity',
-      showLaborButton: true, // По умолчанию true
+      isFruitMode: true,
+      visualModeKey: visualModeFruit,
+      showLaborButton: true,
     );
+  }
+
+  String get effectiveVisualModeKey {
+    switch (visualModeKey) {
+      case visualModeFruit:
+      case visualModeRealistic:
+      case visualModeGrowth:
+        return visualModeKey;
+      default:
+        return isFruitMode ? visualModeFruit : visualModeRealistic;
+    }
   }
 
   int get currentWeek {

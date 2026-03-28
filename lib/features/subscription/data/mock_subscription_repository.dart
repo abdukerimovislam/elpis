@@ -1,14 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'subscription_repository.dart'; // Убедись, что путь правильный к абстрактному репозиторию
 
 class MockSubscriptionRepository implements SubscriptionRepository {
-
   bool _isPremium = false;
 
   @override
   Future<void> init() async {
     await Future.delayed(const Duration(seconds: 1));
-    print("🔹 MOCK: Subscription SDK Initialized");
+    debugPrint("MOCK: Subscription SDK Initialized");
   }
 
   @override
@@ -23,7 +23,7 @@ class MockSubscriptionRepository implements SubscriptionRepository {
     // В моке мы игнорируем сам пакет
     await Future.delayed(const Duration(seconds: 2));
     _isPremium = true;
-    print("🔹 MOCK: Purchase Successful! User is now Premium.");
+    debugPrint("MOCK: Purchase successful. User is now Premium.");
     return true;
   }
 
@@ -31,7 +31,7 @@ class MockSubscriptionRepository implements SubscriptionRepository {
   Future<bool> restorePurchases() async {
     await Future.delayed(const Duration(seconds: 1));
     _isPremium = true;
-    print("🔹 MOCK: Restore Successful!");
+    debugPrint("MOCK: Restore successful.");
     return true;
   }
 

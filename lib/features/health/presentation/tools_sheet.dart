@@ -49,75 +49,105 @@ class _ToolsSheetState extends State<ToolsSheet> {
 
     // --- THEMING ---
     final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
     final scaffoldBg = theme.scaffoldBackgroundColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-    final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
 
     // List of tools
     final List<_ToolData> allTools = [
       _ToolData(
-        title: l10n.toolIsItNormal ?? "Is it Normal?",
-        subtitle: l10n.toolIsItNormalSub ?? "Symptom checker",
+        title: l10n.toolIsItNormal,
+        subtitle: l10n.toolIsItNormalSub,
         category: l10n.menuHealth,
         icon: Icons.healing_outlined,
         color: const Color(0xFFE8F5E9),
         onTap: (ctx) => _openSheet(ctx, const IsItNormalSheet()),
       ),
       _ToolData(
-        title: l10n.toolSymptoms, subtitle: l10n.toolSymptomsSub, category: l10n.menuHealth,
-        icon: Icons.favorite_border, color: const Color(0xFFFFE4E1),
+        title: l10n.toolSymptoms,
+        subtitle: l10n.toolSymptomsSub,
+        category: l10n.menuHealth,
+        icon: Icons.favorite_border,
+        color: const Color(0xFFFFE4E1),
         onTap: (ctx) => _openSheet(ctx, const SymptomSheet()),
       ),
       _ToolData(
-        title: l10n.toolWeight, subtitle: l10n.toolWeightSub, category: l10n.menuHealth,
-        icon: Icons.scale_outlined, color: const Color(0xFFE1F5FE),
+        title: l10n.toolWeight,
+        subtitle: l10n.toolWeightSub,
+        category: l10n.menuHealth,
+        icon: Icons.scale_outlined,
+        color: const Color(0xFFE1F5FE),
         onTap: (ctx) => _openSheet(ctx, const WeightSheet()),
       ),
       _ToolData(
-        title: l10n.toolWater, subtitle: l10n.toolWaterSub, category: l10n.menuHealth,
-        icon: Icons.water_drop_outlined, color: const Color(0xFFE0F7FA),
+        title: l10n.toolWater,
+        subtitle: l10n.toolWaterSub,
+        category: l10n.menuHealth,
+        icon: Icons.water_drop_outlined,
+        color: const Color(0xFFE0F7FA),
         onTap: (ctx) => _openSheet(ctx, const WaterSheet()),
       ),
       _ToolData(
-        title: l10n.toolKicks, subtitle: l10n.toolKicksSub, category: l10n.menuHealth,
-        icon: Icons.touch_app_outlined, color: const Color(0xFFFFF3E0),
+        title: l10n.toolKicks,
+        subtitle: l10n.toolKicksSub,
+        category: l10n.menuHealth,
+        icon: Icons.touch_app_outlined,
+        color: const Color(0xFFFFF3E0),
         onTap: (ctx) {
           Navigator.pop(ctx);
-          Navigator.push(ctx, MaterialPageRoute(builder: (_) => const KickCounterSheet()));
+          Navigator.push(
+              ctx, MaterialPageRoute(builder: (_) => const KickCounterSheet()));
         },
       ),
       _ToolData(
-        title: l10n.toolContractions, subtitle: l10n.toolContractionsSub, category: l10n.menuPrep,
-        icon: Icons.timer_outlined, color: const Color(0xFFE8EAF6),
+        title: l10n.toolContractions,
+        subtitle: l10n.toolContractionsSub,
+        category: l10n.menuPrep,
+        icon: Icons.timer_outlined,
+        color: const Color(0xFFE8EAF6),
         onTap: (ctx) {
           Navigator.pop(ctx);
-          Navigator.push(ctx, MaterialPageRoute(builder: (_) => const ContractionTimerSheet()));
+          Navigator.push(ctx,
+              MaterialPageRoute(builder: (_) => const ContractionTimerSheet()));
         },
       ),
       _ToolData(
-        title: l10n.toolBag, subtitle: l10n.toolBagSub, category: l10n.menuPrep,
-        icon: Icons.shopping_bag_outlined, color: const Color(0xFFE0F2F1),
+        title: l10n.toolBag,
+        subtitle: l10n.toolBagSub,
+        category: l10n.menuPrep,
+        icon: Icons.shopping_bag_outlined,
+        color: const Color(0xFFE0F2F1),
         onTap: (ctx) => _openSheet(ctx, const ChecklistSheet()),
       ),
       _ToolData(
-        title: l10n.toolKegel, subtitle: l10n.toolKegelSub, category: l10n.menuPrep,
-        icon: Icons.fitness_center_outlined, color: const Color(0xFFF3E5F5),
+        title: l10n.toolKegel,
+        subtitle: l10n.toolKegelSub,
+        category: l10n.menuPrep,
+        icon: Icons.fitness_center_outlined,
+        color: const Color(0xFFF3E5F5),
         onTap: (ctx) => _openSheet(ctx, const KegelSheet()),
       ),
       _ToolData(
-        title: l10n.toolVisits, subtitle: l10n.toolVisitsSub, category: l10n.menuPrep,
-        icon: Icons.calendar_month_outlined, color: const Color(0xFFFFFDE7),
+        title: l10n.toolVisits,
+        subtitle: l10n.toolVisitsSub,
+        category: l10n.menuPrep,
+        icon: Icons.calendar_month_outlined,
+        color: const Color(0xFFFFFDE7),
         onTap: (ctx) => _openSheet(ctx, const DoctorVisitsSheet()),
       ),
       _ToolData(
-        title: l10n.toolNames, subtitle: l10n.toolNamesSub, category: l10n.menuFamily,
-        icon: Icons.favorite, color: const Color(0xFFFFEBEE),
+        title: l10n.toolNames,
+        subtitle: l10n.toolNamesSub,
+        category: l10n.menuFamily,
+        icon: Icons.favorite,
+        color: const Color(0xFFFFEBEE),
         onTap: (ctx) => _openSheet(ctx, const NameSwiperSheet()),
       ),
       _ToolData(
-        title: l10n.toolGallery, subtitle: l10n.toolGallerySub, category: l10n.menuFamily,
-        icon: Icons.photo_camera_outlined, color: const Color(0xFFEFEBE9),
+        title: l10n.toolGallery,
+        subtitle: l10n.toolGallerySub,
+        category: l10n.menuFamily,
+        icon: Icons.photo_camera_outlined,
+        color: const Color(0xFFEFEBE9),
         onTap: (ctx) => _openSheet(ctx, const BumpGallerySheet()),
       ),
     ];
@@ -133,9 +163,10 @@ class _ToolsSheetState extends State<ToolsSheet> {
           const SizedBox(height: 12),
           // Drag Handle
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: mutedColor.withOpacity(0.2),
+              color: mutedColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -182,7 +213,9 @@ class _ToolsSheetState extends State<ToolsSheet> {
 
                 // Top Gradient (Fade out)
                 Positioned(
-                  top: 0, left: 0, right: 0,
+                  top: 0,
+                  left: 0,
+                  right: 0,
                   height: 100,
                   child: IgnorePointer(
                     child: Container(
@@ -192,7 +225,7 @@ class _ToolsSheetState extends State<ToolsSheet> {
                           end: Alignment.bottomCenter,
                           colors: [
                             scaffoldBg,
-                            scaffoldBg.withOpacity(0.0),
+                            scaffoldBg.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -202,7 +235,9 @@ class _ToolsSheetState extends State<ToolsSheet> {
 
                 // Bottom Gradient (Fade out)
                 Positioned(
-                  bottom: 0, left: 0, right: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
                   height: 100,
                   child: IgnorePointer(
                     child: Container(
@@ -212,7 +247,7 @@ class _ToolsSheetState extends State<ToolsSheet> {
                           end: Alignment.topCenter,
                           colors: [
                             scaffoldBg,
-                            scaffoldBg.withOpacity(0.0),
+                            scaffoldBg.withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -294,7 +329,7 @@ class _DrumCard extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               // Shadow follows primary theme color
-              color: primaryColor.withOpacity(isActive ? 0.15 : 0.0),
+              color: primaryColor.withValues(alpha: isActive ? 0.15 : 0.0),
               blurRadius: isActive ? 12 : 0,
               offset: const Offset(0, 4),
             )
@@ -302,7 +337,7 @@ class _DrumCard extends StatelessWidget {
           border: Border.all(
             // Border follows primary theme color
             color: isActive
-                ? primaryColor.withOpacity(0.4)
+                ? primaryColor.withValues(alpha: 0.4)
                 : Colors.transparent,
             width: 1.5,
           ),
@@ -318,7 +353,7 @@ class _DrumCard extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   // Pastel colors for tools remain constant (content)
-                  color: tool.color.withOpacity(0.3),
+                  color: tool.color.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(tool.icon, color: Colors.black87, size: 20),
@@ -350,9 +385,10 @@ class _DrumCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         // Category Label
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: mutedColor.withOpacity(0.08),
+                            color: mutedColor.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -360,8 +396,7 @@ class _DrumCard extends StatelessWidget {
                             style: theme.textTheme.labelSmall?.copyWith(
                                 fontSize: 8,
                                 fontWeight: FontWeight.bold,
-                                color: mutedColor
-                            ),
+                                color: mutedColor),
                           ),
                         ),
                       ],
@@ -369,10 +404,8 @@ class _DrumCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       tool.subtitle,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 11,
-                          color: mutedColor
-                      ),
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(fontSize: 11, color: mutedColor),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -383,11 +416,8 @@ class _DrumCard extends StatelessWidget {
 
             // Arrow (active only)
             if (isActive)
-              Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: mutedColor.withOpacity(0.5)
-              ),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: mutedColor.withValues(alpha: 0.5)),
           ],
         ),
       ),

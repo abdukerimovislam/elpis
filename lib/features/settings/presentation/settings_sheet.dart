@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:printing/printing.dart';
 
 import '../../pregnancy/data/pregnancy_repository.dart';
@@ -24,7 +23,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   late TextEditingController _nameController;
   late DateTime _pickerDate; // Дата последней менструации
   late String _languageCode;
-  late bool _isFruitMode;
+  late String _visualModeKey;
   late String _themeKey;
 
   // Контроллеры для Labor Mode (Экстренные контакты)
@@ -37,6 +36,8 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   late bool _showLaborButton;
 
   bool _isExporting = false;
+  bool _isSavingFields = false;
+  bool _isDeletingData = false;
 
   @override
   void initState() {
@@ -46,7 +47,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     // Инициализация основных настроек
     _nameController = TextEditingController(text: s.babyName);
     _languageCode = s.languageCode;
-    _isFruitMode = s.isFruitMode;
+    _visualModeKey = s.effectiveVisualModeKey;
     _themeKey = s.themeKey.isEmpty ? 'serenity' : s.themeKey;
     _pickerDate = s.estimatedDueDate.subtract(const Duration(days: 280));
 
@@ -57,8 +58,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     _hospitalAddressController = TextEditingController(text: s.hospitalAddress);
 
     // Инициализация свича (если поле еще не создано в базе, считаем true)
-    // ignore: unnecessary_null_comparison
-    _showLaborButton = s.showLaborButton ?? true;
+    _showLaborButton = s.showLaborButton;
   }
 
   @override
@@ -75,35 +75,63 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     return _pickerDate.add(const Duration(days: 280));
   }
 
-  Future<void> _safeRun(Future<void> Function() action) async {
+  void _showErrorSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
+  Future<bool> _safeRun(Future<void> Function() action) async {
     try {
       await action();
+      return true;
     } catch (e, stack) {
       debugPrint("Settings Error: $e\n$stack");
-      if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("${l10n.errorGeneric}: $e"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+      if (!mounted) {
+        return false;
       }
+      final l10n = AppLocalizations.of(context)!;
+      _showErrorSnack("${l10n.errorGeneric}: $e");
+      return false;
     }
   }
 
   // --- СОХРАНЕНИЕ ---
 
-  Future<void> _saveAllFields() async {
-    await _safeRun(() async {
+  Future<bool> _saveAllFields() async {
+    if (_isSavingFields) {
+      return false;
+    }
+
+    setState(() => _isSavingFields = true);
+    final didSave = await _safeRun(() async {
       await ref.read(pregnancyRepositoryProvider).updateSettings(
-        name: _nameController.text.trim(),
-        partnerName: _partnerNameController.text.trim(),
-        partnerPhone: _partnerPhoneController.text.trim(),
-        doctorPhone: _doctorPhoneController.text.trim(),
-        hospitalAddress: _hospitalAddressController.text.trim(),
-      );
+            name: _nameController.text.trim(),
+            partnerName: _partnerNameController.text.trim(),
+            partnerPhone: _partnerPhoneController.text.trim(),
+            doctorPhone: _doctorPhoneController.text.trim(),
+            hospitalAddress: _hospitalAddressController.text.trim(),
+          );
     });
+    if (mounted) {
+      setState(() => _isSavingFields = false);
+    }
+    return didSave;
+  }
+
+  Future<void> _handleClose() async {
+    final didSave = await _saveAllFields();
+    if (!mounted || !didSave) {
+      return;
+    }
+    Navigator.pop(context);
   }
 
   Future<void> _updateTheme(String key) async {
@@ -116,14 +144,16 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   Future<void> _updateLanguage(String code) async {
     setState(() => _languageCode = code);
     await _safeRun(() async {
-      await ref.read(pregnancyRepositoryProvider).updateSettings(languageCode: code);
+      await ref
+          .read(pregnancyRepositoryProvider)
+          .updateSettings(languageCode: code);
     });
   }
 
-  Future<void> _updateMode(bool isFruit) async {
-    setState(() => _isFruitMode = isFruit);
+  Future<void> _updateMode(String visualModeKey) async {
+    setState(() => _visualModeKey = visualModeKey);
     await _safeRun(() async {
-      await ref.read(pregnancyRepositoryProvider).setFruitMode(isFruit);
+      await ref.read(pregnancyRepositoryProvider).setVisualMode(visualModeKey);
     });
   }
 
@@ -131,7 +161,9 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   Future<void> _updateLaborButtonVisibility(bool value) async {
     setState(() => _showLaborButton = value);
     await _safeRun(() async {
-      await ref.read(pregnancyRepositoryProvider).updateSettings(showLaborButton: value);
+      await ref
+          .read(pregnancyRepositoryProvider)
+          .updateSettings(showLaborButton: value);
     });
   }
 
@@ -177,21 +209,31 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
 
     try {
       final repo = ref.read(pregnancyRepositoryProvider);
+      final settings = await repo.getSettings();
       final weights = await repo.getWeights();
+      final kickHistory = await repo.getKickHistory();
+      final recentSymptoms = await repo.getRecentSymptoms();
 
-      final mockData = ReportData(
-        userName: _nameController.text.isNotEmpty ? _nameController.text : l10n.defaultMomName,
-        currentWeek: widget.currentSettings.currentWeek,
-        weightHistory: weights.map((w) => WeightEntry(w.date, w.weightKg ?? 0)).toList(),
-        kickHistory: [KickSession(DateTime.now().subtract(const Duration(hours: 4)), 1200, 10)], // Заглушка, если пусто
-        recentSymptoms: ["Fatigue", "Heartburn"],
+      final reportData = ReportData(
+        userName: _nameController.text.isNotEmpty
+            ? _nameController.text
+            : l10n.defaultMomName,
+        currentWeek:
+            settings?.currentWeek ?? widget.currentSettings.currentWeek,
+        weightHistory:
+            weights.map((w) => WeightEntry(w.date, w.weightKg ?? 0)).toList(),
+        kickHistory: kickHistory
+            .map((k) => KickSession(k.date, 0, k.totalKicks))
+            .toList(),
+        recentSymptoms: recentSymptoms,
       );
 
-      final pdfBytes = await PdfReportService().generateReport(mockData, locale, l10n);
+      final pdfBytes =
+          await PdfReportService().generateReport(reportData, locale, l10n);
       await Printing.sharePdf(bytes: pdfBytes, filename: 'Bloom_Report.pdf');
-
     } catch (e) {
       debugPrint("PDF Error: $e");
+      _showErrorSnack(l10n.errorGeneric);
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -205,27 +247,68 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
         title: Text(l10n.settingsDeleteData),
         content: Text(l10n.settingsDeleteDataConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.commonCancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.commonCancel)),
           TextButton(
               onPressed: () async {
-                Navigator.pop(context);
+                if (_isDeletingData) {
+                  return;
+                }
+
+                final dialogNavigator = Navigator.of(context);
+                final sheetNavigator = Navigator.of(this.context);
+                if (mounted) {
+                  setState(() => _isDeletingData = true);
+                }
                 try {
                   await ref.read(pregnancyRepositoryProvider).clearAllData();
-                  if (mounted) Navigator.pop(context); // Закрываем Sheet
+                  if (dialogNavigator.mounted) {
+                    dialogNavigator.pop();
+                  }
+                  if (mounted) {
+                    sheetNavigator.pop(); // Закрываем Sheet
+                  }
                 } catch (e) {
                   debugPrint("Wipe Error: $e");
+                  if (dialogNavigator.mounted) {
+                    dialogNavigator.pop();
+                  }
+                  _showErrorSnack(l10n.errorDeleteData);
+                } finally {
+                  if (mounted) {
+                    setState(() => _isDeletingData = false);
+                  }
                 }
               },
-              child: Text(l10n.commonDelete, style: const TextStyle(color: Colors.red))
-          ),
+              child: Text(l10n.commonDelete,
+                  style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
   }
 
-  void _openLink(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  void _showPrivacyUnavailable() {
+    final l10n = AppLocalizations.of(context)!;
+    final body = Localizations.localeOf(context).languageCode == 'ru'
+        ? 'Политика конфиденциальности пока не добавлена в приложение.'
+        : 'Privacy policy has not been added to the app yet.';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.settingsPrivacy),
+        content: Text(
+          body,
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonUnderstood),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDisclaimer() {
@@ -235,7 +318,11 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
       builder: (context) => AlertDialog(
         title: Text(l10n.disclaimerTitle),
         content: SingleChildScrollView(child: Text(l10n.disclaimerBody)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.commonUnderstood))],
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.commonUnderstood))
+        ],
       ),
     );
   }
@@ -250,12 +337,13 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     final cardColor = theme.cardColor;
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         FocusScope.of(context).unfocus();
-        _saveAllFields();
+        await _saveAllFields();
       },
       child: Container(
-        height: MediaQuery.of(context).size.height * 0.92, // Чуть выше для клавиатуры
+        height: MediaQuery.of(context).size.height *
+            0.92, // Чуть выше для клавиатуры
         padding: EdgeInsets.only(
           top: 24, left: 24, right: 24,
           // Важно для клавиатуры:
@@ -269,27 +357,36 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
           children: [
             Center(
                 child: Container(
-                    width: 40, height: 4,
-                    decoration: BoxDecoration(color: textMuted.withOpacity(0.2), borderRadius: BorderRadius.circular(2))
-                )
-            ),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                        color: textMuted.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 24),
 
             // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(l10n.settingsTitle, style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)),
+                Text(l10n.settingsTitle,
+                    style:
+                        theme.textTheme.displayLarge?.copyWith(fontSize: 24)),
                 IconButton(
-                  onPressed: () {
-                    _saveAllFields();
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isSavingFields ? null : _handleClose,
                   icon: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: cardColor, shape: BoxShape.circle),
-                      child: Icon(Icons.close, size: 20, color: textMuted)
-                  ),
+                      decoration: BoxDecoration(
+                          color: cardColor, shape: BoxShape.circle),
+                      child: _isSavingFields
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: textMuted,
+                              ),
+                            )
+                          : Icon(Icons.close, size: 20, color: textMuted)),
                 )
               ],
             ),
@@ -304,32 +401,33 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                   children: [
                     // 1. NAME
                     _buildSectionTitle(context, l10n.settingsNameLabel),
-                    _buildTextField(context, _nameController, l10n.settingsNameHint),
+                    _buildTextField(
+                        context, _nameController, l10n.settingsNameHint),
 
                     const SizedBox(height: 24),
 
                     // 2. EMERGENCY PREP (Сюда добавляем свич)
                     Theme(
-                      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                      data: Theme.of(context)
+                          .copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
                         title: Text(
                             l10n.laborEmergencyPrepTitle, // "EMERGENCY PREP"
                             style: theme.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
-                                color: primaryColor
-                            )
-                        ),
+                                color: primaryColor)),
                         tilePadding: EdgeInsets.zero,
                         childrenPadding: EdgeInsets.zero,
                         initiallyExpanded: false,
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                                color: cardColor.withOpacity(0.5),
+                                color: cardColor.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: primaryColor.withOpacity(0.1))
-                            ),
+                                border: Border.all(
+                                    color:
+                                        primaryColor.withValues(alpha: 0.1))),
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,40 +437,57 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        "Show 'I'm in Labor' Button", // Можно вынести в локализацию
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 15
-                                        ),
+                                        l10n.laborTriggerButton,
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15),
                                       ),
                                     ),
                                     CupertinoSwitch(
                                       value: _showLaborButton,
-                                      activeColor: primaryColor,
+                                      activeTrackColor: primaryColor,
                                       onChanged: _updateLaborButtonVisibility,
                                     ),
                                   ],
                                 ),
                                 const Divider(height: 24),
 
-                                Text(l10n.laborEmergencyPrepSubtitle, // "Fill this now..."
-                                    style: TextStyle(fontSize: 12, color: textMuted)),
+                                Text(
+                                    l10n
+                                        .laborEmergencyPrepSubtitle, // "Fill this now..."
+                                    style: TextStyle(
+                                        fontSize: 12, color: textMuted)),
                                 const SizedBox(height: 16),
 
-                                _buildSmallLabel(l10n.laborPartnerName), // "Partner's Name"
-                                _buildTextField(context, _partnerNameController, "e.g. Alex", isSmall: true),
+                                _buildSmallLabel(
+                                    l10n.laborPartnerName), // "Partner's Name"
+                                _buildTextField(context, _partnerNameController,
+                                    "e.g. Alex",
+                                    isSmall: true),
                                 const SizedBox(height: 12),
 
-                                _buildSmallLabel(l10n.laborPartnerPhone), // "Partner's Phone"
-                                _buildTextField(context, _partnerPhoneController, "+1 234 ...", isPhone: true, isSmall: true),
+                                _buildSmallLabel(l10n
+                                    .laborPartnerPhone), // "Partner's Phone"
+                                _buildTextField(context,
+                                    _partnerPhoneController, "+1 234 ...",
+                                    isPhone: true, isSmall: true),
                                 const SizedBox(height: 12),
 
-                                _buildSmallLabel(l10n.laborDoctorPhone), // "Doctor's Phone"
-                                _buildTextField(context, _doctorPhoneController, "Emergency contact", isPhone: true, isSmall: true),
+                                _buildSmallLabel(
+                                    l10n.laborDoctorPhone), // "Doctor's Phone"
+                                _buildTextField(context, _doctorPhoneController,
+                                    "Emergency contact",
+                                    isPhone: true, isSmall: true),
                                 const SizedBox(height: 12),
 
-                                _buildSmallLabel(l10n.laborHospitalAddress), // "Hospital Address"
-                                _buildTextField(context, _hospitalAddressController, "Street, Building...", isSmall: true),
+                                _buildSmallLabel(l10n
+                                    .laborHospitalAddress), // "Hospital Address"
+                                _buildTextField(
+                                    context,
+                                    _hospitalAddressController,
+                                    "Street, Building...",
+                                    isSmall: true),
                               ],
                             ),
                           ),
@@ -393,8 +508,14 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                         thumbColor: theme.scaffoldBackgroundColor,
                         padding: const EdgeInsets.all(4),
                         children: {
-                          'en': Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text("English", style: theme.textTheme.bodyMedium)),
-                          'ru': Padding(padding: const EdgeInsets.symmetric(vertical: 10), child: Text("Русский", style: theme.textTheme.bodyMedium)),
+                          'en': Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Text("English",
+                                  style: theme.textTheme.bodyMedium)),
+                          'ru': Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Text("Русский",
+                                  style: theme.textTheme.bodyMedium)),
                         },
                         onValueChanged: (value) {
                           if (value != null) _updateLanguage(value);
@@ -408,11 +529,14 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                     _buildSectionTitle(context, l10n.settingsThemeTitle),
                     Row(
                       children: [
-                        _buildThemeOption('serenity', const Color(0xFF7D93B2), l10n.themeSerenity),
+                        _buildThemeOption('serenity', const Color(0xFF7D93B2),
+                            l10n.themeSerenity),
                         const SizedBox(width: 16),
-                        _buildThemeOption('sage', const Color(0xFF9CAF88), l10n.themeNature),
+                        _buildThemeOption(
+                            'sage', const Color(0xFF9CAF88), l10n.themeNature),
                         const SizedBox(width: 16),
-                        _buildThemeOption('peach', const Color(0xFFE29587), l10n.themeWarmth),
+                        _buildThemeOption(
+                            'peach', const Color(0xFFE29587), l10n.themeWarmth),
                       ],
                     ),
 
@@ -422,16 +546,37 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                     _buildSectionTitle(context, l10n.settingsVisualMode),
                     Row(
                       children: [
-                        Expanded(child: _buildModeCard(context, true, l10n.visualModeFruit, Icons.eco)),
+                        Expanded(
+                            child: _buildModeCard(
+                                context,
+                                PregnancySettings.visualModeFruit,
+                                l10n.visualModeFruit,
+                                Icons.eco)),
                         const SizedBox(width: 12),
-                        Expanded(child: _buildModeCard(context, false, l10n.visualModeRealistic, Icons.lens_blur)),
+                        Expanded(
+                            child: _buildModeCard(
+                                context,
+                                PregnancySettings.visualModeRealistic,
+                                l10n.visualModeRealistic,
+                                Icons.lens_blur)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: _buildModeCard(
+                                context,
+                                PregnancySettings.visualModeGrowth,
+                                Localizations.localeOf(context).languageCode ==
+                                        'ru'
+                                    ? 'Развитие'
+                                    : 'Growth',
+                                Icons.child_friendly_rounded)),
                       ],
                     ),
 
                     const SizedBox(height: 24),
 
                     // 6. DATE PICKER (NEW DIALOG STYLE)
-                    _buildSectionTitle(context, l10n.onboardingLmpLabel.toUpperCase()),
+                    _buildSectionTitle(
+                        context, l10n.onboardingLmpLabel.toUpperCase()),
                     GestureDetector(
                       onTap: _pickDate,
                       child: Container(
@@ -439,7 +584,8 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                         decoration: BoxDecoration(
                           color: cardColor,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: primaryColor.withOpacity(0.2)),
+                          border: Border.all(
+                              color: primaryColor.withValues(alpha: 0.2)),
                         ),
                         child: Row(
                           children: [
@@ -450,12 +596,22 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    DateFormat.yMMMMd(Localizations.localeOf(context).toString()).format(_pickerDate),
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                                    DateFormat.yMMMMd(
+                                            Localizations.localeOf(context)
+                                                .toString())
+                                        .format(_pickerDate),
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600),
                                   ),
                                   Text(
-                                    l10n.onboardingCalculatedDate(DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(_finalDueDate)),
-                                    style: TextStyle(fontSize: 12, color: textMuted),
+                                    l10n.onboardingCalculatedDate(
+                                        DateFormat.yMMMd(
+                                                Localizations.localeOf(context)
+                                                    .toString())
+                                            .format(_finalDueDate)),
+                                    style: TextStyle(
+                                        fontSize: 12, color: textMuted),
                                   ),
                                 ],
                               ),
@@ -476,14 +632,22 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: BorderSide(color: primaryColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100)),
                         ),
                         icon: _isExporting
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
                             : Icon(Icons.picture_as_pdf, color: primaryColor),
                         label: Text(
-                          _isExporting ? l10n.exportingPdf : l10n.settingsExportPdf,
-                          style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold),
+                          _isExporting
+                              ? l10n.exportingPdf
+                              : l10n.settingsExportPdf,
+                          style: TextStyle(
+                              color: primaryColor, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -493,26 +657,30 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                     // LEGAL & INFO SECTION
                     Center(
                         child: Column(
+                      children: [
+                        Text(l10n.settingsLegalTitle,
+                            style: theme.textTheme.labelSmall),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 12,
                           children: [
-                            Text(l10n.settingsLegalTitle, style: theme.textTheme.labelSmall),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 12,
-                              children: [
-                                TextButton(
-                                  onPressed: () => _openLink("https://google.com"), // Заглушка
-                                  child: Text(l10n.settingsPrivacy, style: TextStyle(color: textMuted, fontSize: 12)),
-                                ),
-                                TextButton(
-                                  onPressed: _showDisclaimer,
-                                  child: Text(l10n.settingsDisclaimer, style: TextStyle(color: textMuted, fontSize: 12)),
-                                ),
-                              ],
+                            TextButton(
+                              onPressed: _showPrivacyUnavailable,
+                              child: Text(l10n.settingsPrivacy,
+                                  style: TextStyle(
+                                      color: textMuted, fontSize: 12)),
+                            ),
+                            TextButton(
+                              onPressed: _showDisclaimer,
+                              child: Text(l10n.settingsDisclaimer,
+                                  style: TextStyle(
+                                      color: textMuted, fontSize: 12)),
                             ),
                           ],
-                        )
-                    ),
+                        ),
+                      ],
+                    )),
 
                     const SizedBox(height: 16),
 
@@ -521,7 +689,8 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
                       child: TextButton(
                         onPressed: _wipeData,
                         child: Text(l10n.settingsDeleteData,
-                            style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+                            style: const TextStyle(
+                                color: Colors.redAccent, fontSize: 12)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -547,11 +716,15 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   Widget _buildSmallLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6, left: 4),
-      child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey)),
     );
   }
 
-  Widget _buildTextField(BuildContext context, TextEditingController controller, String hint, {bool isPhone = false, bool isSmall = false}) {
+  Widget _buildTextField(
+      BuildContext context, TextEditingController controller, String hint,
+      {bool isPhone = false, bool isSmall = false}) {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
@@ -561,12 +734,15 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
       child: TextField(
         controller: controller,
         keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-        style: theme.textTheme.bodyMedium?.copyWith(fontSize: isSmall ? 15 : 18),
+        style:
+            theme.textTheme.bodyMedium?.copyWith(fontSize: isSmall ? 15 : 18),
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hint,
-          hintStyle: TextStyle(fontSize: isSmall ? 14 : 16, color: Colors.black26),
-          contentPadding: isSmall ? const EdgeInsets.symmetric(vertical: 10) : null,
+          hintStyle:
+              TextStyle(fontSize: isSmall ? 14 : 16, color: Colors.black26),
+          contentPadding:
+              isSmall ? const EdgeInsets.symmetric(vertical: 10) : null,
         ),
         onEditingComplete: () {
           FocusScope.of(context).unfocus(); // При Enter сохраняем
@@ -576,26 +752,33 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
     );
   }
 
-  Widget _buildModeCard(BuildContext context, bool isFruit, String label, IconData icon) {
+  Widget _buildModeCard(
+      BuildContext context, String visualModeKey, String label, IconData icon) {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
-    final isActive = _isFruitMode == isFruit;
+    final isActive = _visualModeKey == visualModeKey;
 
     return GestureDetector(
-      onTap: () => _updateMode(isFruit),
+      onTap: () => _updateMode(visualModeKey),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? primaryColor.withOpacity(0.15) : theme.cardColor,
+          color:
+              isActive ? primaryColor.withValues(alpha: 0.15) : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isActive ? primaryColor : Colors.transparent, width: 1.5),
+          border: Border.all(
+              color: isActive ? primaryColor : Colors.transparent, width: 1.5),
         ),
         child: Column(
           children: [
             Icon(icon, color: isActive ? primaryColor : Colors.grey),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(color: isActive ? primaryColor : Colors.grey, fontWeight: isActive ? FontWeight.bold : FontWeight.normal)),
+            Text(label,
+                style: TextStyle(
+                    color: isActive ? primaryColor : Colors.grey,
+                    fontWeight:
+                        isActive ? FontWeight.bold : FontWeight.normal)),
           ],
         ),
       ),
@@ -611,17 +794,32 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
       child: Column(
         children: [
           Container(
-            width: 48, height: 48,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
-                border: isSelected ? Border.all(color: theme.primaryColor, width: 3) : null,
-                boxShadow: [if (isSelected) BoxShadow(color: color.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)]
-            ),
-            child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                border: isSelected
+                    ? Border.all(color: theme.primaryColor, width: 3)
+                    : null,
+                boxShadow: [
+                  if (isSelected)
+                    BoxShadow(
+                        color: color.withValues(alpha: 0.5),
+                        blurRadius: 8,
+                        spreadRadius: 1)
+                ]),
+            child: isSelected
+                ? const Icon(Icons.check, color: Colors.white)
+                : null,
           ),
           const SizedBox(height: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? theme.primaryColor : Colors.grey, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: isSelected ? theme.primaryColor : Colors.grey,
+                  fontWeight:
+                      isSelected ? FontWeight.bold : FontWeight.normal)),
         ],
       ),
     );

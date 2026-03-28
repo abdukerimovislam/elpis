@@ -1,27 +1,26 @@
 import 'dart:math' as math;
-import 'dart:ui'; // Нужен для MaskFilter в OrbitPainter
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/ui/glass_sphere.dart';
-import '../../../../l10n/app_localizations.dart';
 import '../../../../core/ui/optimized_image.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../pregnancy/data/fetal_growth_mapper.dart';
+import '../../../pregnancy/domain/fetal_growth_stage.dart';
+import '../../../pregnancy/data/pregnancy_repository.dart';
+import '../../../pregnancy/domain/pregnancy_settings.dart';
 
-// Импорты репозитория и настроек
-import 'package:bloom_mama/features/pregnancy/data/pregnancy_repository.dart';
-import 'package:bloom_mama/features/pregnancy/domain/pregnancy_settings.dart';
-
-// Провайдер стрима настроек
-final pregnancySettingsStreamProvider = StreamProvider<PregnancySettings?>((ref) {
+final pregnancySettingsStreamProvider =
+    StreamProvider<PregnancySettings?>((ref) {
   final repository = ref.watch(pregnancyRepositoryProvider);
   return repository.watchSettings();
 });
 
-class LivingSphereDisplay extends ConsumerWidget {
+class LivingSphereDisplay extends ConsumerStatefulWidget {
   final int week;
   final double scale;
-  // Blur удален для производительности
 
   const LivingSphereDisplay({
     super.key,
@@ -30,208 +29,297 @@ class LivingSphereDisplay extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LivingSphereDisplay> createState() =>
+      _LivingSphereDisplayState();
+}
+
+class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
+  static const List<String> _modeOrder = [
+    PregnancySettings.visualModeFruit,
+    PregnancySettings.visualModeRealistic,
+    PregnancySettings.visualModeGrowth,
+  ];
+
+  bool _isSavingMode = false;
+  int _weekTransitionDirection = 1;
+
+  @override
+  void didUpdateWidget(covariant LivingSphereDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.week == oldWidget.week) {
+      return;
+    }
+
+    _weekTransitionDirection = widget.week >= oldWidget.week ? 1 : -1;
+  }
+
+  void _showErrorSnack(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _toggleMode(String currentMode) async {
+    if (_isSavingMode) {
+      return;
+    }
+
+    final currentIndex = _modeOrder.indexOf(currentMode);
+    final nextMode = _modeOrder[
+        (currentIndex == -1 ? 0 : currentIndex + 1) % _modeOrder.length];
+
+    setState(() {
+      _isSavingMode = true;
+    });
+
+    try {
+      await ref.read(pregnancyRepositoryProvider).setVisualMode(nextMode);
+    } catch (_) {
+      if (mounted) {
+        _showErrorSnack(
+          AppLocalizations.of(context)?.errorGeneric ??
+              "Something went wrong. Please try again.",
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingMode = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    // 1. СЛУШАЕМ НАСТРОЙКИ
     final settingsAsync = ref.watch(pregnancySettingsStreamProvider);
-    final bool isFruitMode = settingsAsync.value?.isFruitMode ?? true;
+    final visualModeKey = settingsAsync.value?.effectiveVisualModeKey ??
+        PregnancySettings.visualModeFruit;
 
-    final int safeWeek = week.clamp(1, 42);
-
-    // 🔥 ЛОГИКА ЗАГЛУШКИ КАРТИНОК 🔥
-    // Если недели 1-3 -> показываем 4. Если 41-42 -> показываем 40.
+    final int safeWeek = widget.week.clamp(1, 42);
     int imageWeek = safeWeek;
     if (safeWeek < 4) imageWeek = 4;
     if (safeWeek > 40) imageWeek = 40;
 
-    // Папки строго маленькими буквами (fruits / realistic)
-    final folderName = isFruitMode ? 'fruits' : 'realistic';
-    final imagePath = 'assets/images/$folderName/week_$imageWeek.webp';
-
+    final growthData = FetalGrowthMapper.forWeek(safeWeek.clamp(1, 40));
+    final isGrowthMode = visualModeKey == PregnancySettings.visualModeGrowth;
+    final imagePath = switch (visualModeKey) {
+      PregnancySettings.visualModeFruit =>
+        'assets/images/fruits/week_$imageWeek.webp',
+      PregnancySettings.visualModeGrowth => growthData.assetPath,
+      _ => 'assets/images/realistic/week_$imageWeek.webp',
+    };
     final biometrics = _PregnancyData.getForWeek(safeWeek, l10n);
 
-    void toggleMode() {
-      final repo = ref.read(pregnancyRepositoryProvider);
-      repo.setFruitMode(!isFruitMode);
-    }
-
     return LayoutBuilder(
-        builder: (context, constraints) {
-          final double availableWidth = constraints.maxWidth;
-          final double contentSize = math.min(availableWidth, 400.0);
+      builder: (context, constraints) {
+        final double availableWidth = constraints.maxWidth;
+        final double contentSize = math.min(availableWidth, 400.0);
+        final double orbitSize = contentSize * 0.9;
+        final double sphereSize = contentSize * 0.82;
 
-          final double orbitSize = contentSize * 0.9;
-          final double sphereSize = contentSize * 0.82;
-          // final double backgroundSize = contentSize * 0.95; // Фон теперь рисуется снаружи
-
-          return RepaintBoundary( // Изолируем перерисовку для оптимизации
-            child: Transform.scale(
-              scale: scale,
-              child: Center(
-                child: SizedBox(
-                  width: contentSize,
-                  height: contentSize,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      // --- 1. ФОН ---
-                      // BreathingBackground теперь рисуется в LivingOrbitScreen для оптимизации слоев,
-                      // но мы не удаляем сам класс ниже, чтобы он был доступен.
-
-                      // --- 2. ОРБИТА ---
-                      SizedBox(
-                        width: orbitSize,
-                        height: orbitSize,
-                        child: TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0.0, end: safeWeek / 40.0),
-                          duration: const Duration(milliseconds: 1500),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return CustomPaint(
-                              size: Size(orbitSize, orbitSize),
-                              painter: OrbitPainter(
-                                progress: value,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      // --- 3. СФЕРА ---
-                      SizedBox(
-                        width: sphereSize,
-                        height: sphereSize,
-                        child: Center(
-                          child: GlassSphere(
-                            size: sphereSize,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Transform.scale(
-                                    scale: sphereSize / 340,
-                                    child: const MagicalLifeCore()
-                                ),
-
-                                // Картинка с анимацией
-                                AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 600),
-                                  switchInCurve: Curves.easeOutBack,
-                                  switchOutCurve: Curves.easeIn,
-                                  transitionBuilder: (child, animation) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: ScaleTransition(
-                                        scale: animation.drive(Tween(begin: 0.9, end: 1.0)),
-                                        child: child,
-                                      ),
-                                    );
-                                  },
-                                  // Используем OptimizedImage для умного кеша
-                                  child: OptimizedImage(
-                                    key: ValueKey<String>("$imageWeek$isFruitMode"),
-                                    path: imagePath,
-                                    height: sphereSize * 0.6,
-                                    memCacheWidth: 600,
-                                  ),
-                                ),
-                              ],
+        return RepaintBoundary(
+          child: Transform.scale(
+            scale: widget.scale,
+            child: Center(
+              child: SizedBox(
+                width: contentSize,
+                height: contentSize,
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    SizedBox(
+                      width: orbitSize,
+                      height: orbitSize,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: safeWeek / 40.0),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return CustomPaint(
+                            size: Size(orbitSize, orbitSize),
+                            painter: OrbitPainter(
+                              progress: value,
+                              color: Theme.of(context).primaryColor,
                             ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      width: sphereSize,
+                      height: sphereSize,
+                      child: Center(
+                        child: GlassSphere(
+                          size: sphereSize,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Transform.scale(
+                                scale: sphereSize / 340,
+                                child: const MagicalLifeCore(),
+                              ),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 600),
+                                switchInCurve: Curves.easeOutBack,
+                                switchOutCurve: Curves.easeIn,
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: animation.drive(
+                                        Tween(begin: 0.9, end: 1.0),
+                                      ),
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: Transform.translate(
+                                  key: ValueKey<String>(
+                                    '$visualModeKey-$imageWeek-${safeWeek.clamp(1, 40)}',
+                                  ),
+                                  offset: Offset(0, isGrowthMode ? 4 : 0),
+                                  child: isGrowthMode
+                                      ? _GrowthSphereImage(
+                                          sphereSize: sphereSize,
+                                          imagePath: imagePath,
+                                          growthData: growthData,
+                                          week: safeWeek.clamp(1, 40),
+                                          transitionDirection:
+                                              _weekTransitionDirection,
+                                        )
+                                      : OptimizedImage(
+                                          path: imagePath,
+                                          height: sphereSize * 0.6,
+                                          memCacheWidth: 800,
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-
-                      // --- 4. КНОПКА ПЕРЕКЛЮЧЕНИЯ ---
-                      Align(
-                        alignment: const Alignment(0, 0.85),
-                        child: _ModeToggleButton(
-                          isFruitMode: isFruitMode,
-                          onTap: toggleMode,
-                        ),
+                    ),
+                    Align(
+                      alignment: const Alignment(0, 0.85),
+                      child: _ModeToggleButton(
+                        visualModeKey: visualModeKey,
+                        isSaving: _isSavingMode,
+                        onTap: () => _toggleMode(visualModeKey),
                       ),
-
-                      // --- 5. ТЕКСТ (Рост) ---
-                      Align(
-                        alignment: const Alignment(-0.9, -0.5),
-                        child: _BiometricTag(
-                          label: l10n.labelLength,
-                          value: biometrics.length,
-                          alignment: CrossAxisAlignment.start,
-                          delay: 200,
-                        ),
+                    ),
+                    Align(
+                      alignment: const Alignment(-0.9, -0.5),
+                      child: _BiometricTag(
+                        label: l10n.labelLength,
+                        value: biometrics.length,
+                        alignment: CrossAxisAlignment.start,
+                        delay: 200,
                       ),
-
-                      // --- 6. ТЕКСТ (Вес) ---
-                      Align(
-                        alignment: const Alignment(0.9, 0.5),
-                        child: _BiometricTag(
-                          label: l10n.labelWeight,
-                          value: biometrics.weight,
-                          alignment: CrossAxisAlignment.end,
-                          delay: 400,
-                        ),
+                    ),
+                    Align(
+                      alignment: const Alignment(0.9, 0.5),
+                      child: _BiometricTag(
+                        label: l10n.labelWeight,
+                        value: biometrics.weight,
+                        alignment: CrossAxisAlignment.end,
+                        delay: 400,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        }
+          ),
+        );
+      },
     );
   }
 }
 
-// --- ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ ---
-
 class _ModeToggleButton extends StatelessWidget {
-  final bool isFruitMode;
+  final String visualModeKey;
+  final bool isSaving;
   final VoidCallback onTap;
 
   const _ModeToggleButton({
-    required this.isFruitMode,
+    required this.visualModeKey,
+    required this.isSaving,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
+    final textColor =
+        Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final isRu = locale == 'ru';
+
+    final (IconData icon, String label, int target) = switch (visualModeKey) {
+      PregnancySettings.visualModeFruit => (
+          Icons.eco_rounded,
+          l10n.visualModeFruit,
+          0,
+        ),
+      PregnancySettings.visualModeGrowth => (
+          Icons.child_friendly_rounded,
+          isRu ? 'Развитие' : 'Growth',
+          2,
+        ),
+      _ => (
+          Icons.widgets_rounded,
+          l10n.visualModeRealistic,
+          1,
+        ),
+    };
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: isSaving ? null : onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.4),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 spreadRadius: 2,
-              )
+              ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                isFruitMode ? Icons.eco_rounded : Icons.widgets_rounded,
-                size: 18,
-                color: textColor,
-              ),
+              if (isSaving)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                  ),
+                )
+              else
+                Icon(icon, size: 18, color: textColor),
               const SizedBox(width: 8),
               Text(
-                isFruitMode
-                    ? (l10n.visualModeFruit.isNotEmpty ? l10n.visualModeFruit : "Fruits")
-                    : (l10n.visualModeRealistic.isNotEmpty ? l10n.visualModeRealistic : "Realistic"),
+                isSaving ? l10n.commonSave : label,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -242,11 +330,132 @@ class _ModeToggleButton extends StatelessWidget {
           ),
         ),
       ),
-    ).animate(target: isFruitMode ? 1 : 0).scale(
-        duration: 300.ms,
-        curve: Curves.easeOutBack,
-        begin: const Offset(0.95, 0.95),
-        end: const Offset(1.0, 1.0)
+    ).animate(target: target.toDouble()).scale(
+          duration: 300.ms,
+          curve: Curves.easeOutBack,
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1.0, 1.0),
+        );
+  }
+}
+
+class _GrowthSphereImage extends StatelessWidget {
+  final double sphereSize;
+  final String imagePath;
+  final FetalGrowthPresentation growthData;
+  final int week;
+  final int transitionDirection;
+
+  const _GrowthSphereImage({
+    required this.sphereSize,
+    required this.imagePath,
+    required this.growthData,
+    required this.week,
+    required this.transitionDirection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final viewportSize = sphereSize * 0.62;
+    final normalizedScale =
+        0.88 + ((growthData.scale - 0.74) / 1.08).clamp(0.0, 1.0) * 0.36;
+    final normalizedOffset = (growthData.yOffset / 14).clamp(-1.0, 1.0) * -8;
+    final glowOpacity = 0.12 + growthData.overallProgress * 0.16;
+    final rotation = -0.05 + growthData.weekProgress * 0.1;
+    final direction = transitionDirection.toDouble();
+
+    return SizedBox(
+      width: viewportSize,
+      height: viewportSize,
+      child: ClipOval(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0, -0.15),
+              radius: 0.92,
+              colors: [
+                theme.primaryColor.withValues(alpha: 0.08),
+                theme.primaryColor.withValues(alpha: 0.02),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.55, 1.0],
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              TweenAnimationBuilder<double>(
+                key: ValueKey<String>(
+                  'growth_sphere_transition_${week}_$imagePath',
+                ),
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 820),
+                curve: Curves.easeOutCubic,
+                builder: (context, t, child) {
+                  final imageSlideX = (1 - t) * 18 * direction;
+                  final imageSlideY = normalizedOffset + (1 - t) * 10;
+                  final glowSlideX = (1 - t) * -12 * direction;
+                  final animatedScale = normalizedScale * (0.88 + (t * 0.12));
+                  final animatedRotation =
+                      rotation + ((1 - t) * -0.08 * direction);
+                  final animatedGlowSize =
+                      viewportSize * (0.68 + growthData.overallProgress * 0.24);
+
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Transform.translate(
+                        offset: Offset(glowSlideX, 0),
+                        child: Opacity(
+                          opacity: 0.4 + (t * 0.6),
+                          child: Container(
+                            width: animatedGlowSize,
+                            height: animatedGlowSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFD6DE)
+                                      .withValues(alpha: glowOpacity),
+                                  blurRadius:
+                                      28 + growthData.overallProgress * 18,
+                                  spreadRadius:
+                                      8 + growthData.overallProgress * 10,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: Offset(imageSlideX, imageSlideY),
+                        child: Opacity(
+                          opacity: 0.2 + (t * 0.8),
+                          child: Transform.rotate(
+                            angle: animatedRotation,
+                            child: Transform.scale(
+                              scale: animatedScale,
+                              child: child,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                child: OptimizedImage(
+                  path: imagePath,
+                  width: viewportSize,
+                  height: viewportSize,
+                  fit: BoxFit.contain,
+                  memCacheWidth: 900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -296,8 +505,8 @@ class _BreathingBackgroundState extends State<BreathingBackground>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  primaryColor.withOpacity(0.15),
-                  primaryColor.withOpacity(0.0),
+                  primaryColor.withValues(alpha: 0.15),
+                  primaryColor.withValues(alpha: 0.0),
                 ],
                 stops: const [0.0, 0.7],
               ),
@@ -337,7 +546,7 @@ class _BiometricTag extends StatelessWidget {
           style: TextStyle(
             fontSize: 10,
             letterSpacing: 1.5,
-            color: mutedColor.withOpacity(0.6),
+            color: mutedColor.withValues(alpha: 0.6),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -346,13 +555,14 @@ class _BiometricTag extends StatelessWidget {
           value,
           style: TextStyle(
             fontSize: 18,
-            color: mainColor.withOpacity(0.8),
+            color: mainColor.withValues(alpha: 0.8),
             fontFamily: "Serif",
             fontWeight: FontWeight.bold,
           ),
         ),
       ],
-    ).animate()
+    )
+        .animate()
         .fadeIn(duration: 600.ms, delay: delay.ms)
         .moveY(begin: 10, end: 0, duration: 600.ms, curve: Curves.easeOut);
   }
@@ -370,13 +580,13 @@ class OrbitPainter extends CustomPainter {
     final radius = size.width / 2;
 
     final trackPaint = Paint()
-      ..color = color.withOpacity(0.1)
+      ..color = color.withValues(alpha: 0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawCircle(center, radius, trackPaint);
 
     final activePaint = Paint()
-      ..color = color.withOpacity(0.6)
+      ..color = color.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 3.0;
@@ -385,11 +595,11 @@ class OrbitPainter extends CustomPainter {
     final sweepAngle = 2 * math.pi * progress;
 
     canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        false,
-        activePaint
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      activePaint,
     );
 
     if (progress > 0) {
@@ -398,27 +608,31 @@ class OrbitPainter extends CustomPainter {
         center.dx + radius * math.cos(endAngle),
         center.dy + radius * math.sin(endAngle),
       );
-      // Blur для точки оставляем, так как это маленький объект и не сильно влияет на FPS
       canvas.drawCircle(
-          endPoint,
-          6.0,
-          Paint()..color = color.withOpacity(0.3)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
+        endPoint,
+        6.0,
+        Paint()
+          ..color = color.withValues(alpha: 0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
       );
       canvas.drawCircle(endPoint, 3.0, Paint()..color = color);
     }
   }
 
   @override
-  bool shouldRepaint(covariant OrbitPainter oldDelegate) => oldDelegate.progress != progress;
+  bool shouldRepaint(covariant OrbitPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
 
 class MagicalLifeCore extends StatefulWidget {
   const MagicalLifeCore({super.key});
+
   @override
   State<MagicalLifeCore> createState() => _MagicalLifeCoreState();
 }
 
-class _MagicalLifeCoreState extends State<MagicalLifeCore> with SingleTickerProviderStateMixin {
+class _MagicalLifeCoreState extends State<MagicalLifeCore>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
@@ -426,8 +640,11 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat(reverse: true);
-    final curve = CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
+    _pulseController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 6))
+          ..repeat(reverse: true);
+    final curve =
+        CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
     _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(curve);
     _opacityAnimation = Tween<double>(begin: 0.5, end: 0.8).animate(curve);
   }
@@ -448,14 +665,24 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore> with SingleTickerProv
           child: Opacity(
             opacity: _opacityAnimation.value,
             child: Container(
-              width: 280, height: 280,
+              width: 280,
+              height: 280,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [const Color(0xFFFCE38A).withOpacity(0.6), const Color(0xFF8E9BAE).withOpacity(0.0)],
+                  colors: [
+                    const Color(0xFFFCE38A).withValues(alpha: 0.6),
+                    const Color(0xFF8E9BAE).withValues(alpha: 0.0),
+                  ],
                   stops: const [0.2, 1.0],
                 ),
-                boxShadow: [BoxShadow(color: const Color(0xFFFCE38A).withOpacity(0.3), blurRadius: 60, spreadRadius: 10)],
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFCE38A).withValues(alpha: 0.3),
+                    blurRadius: 60,
+                    spreadRadius: 10,
+                  ),
+                ],
               ),
             ),
           ),
@@ -473,15 +700,15 @@ class _PregnancyData {
 
   static _PregnancyData getForWeek(int week, AppLocalizations l10n) {
     final safeWeek = week.clamp(1, 42);
-    // Используем безопасные данные, если для недели их нет, берем ближайшую известную
-    final raw = _biometricsMap[safeWeek] ?? (safeWeek < 4 ? [0, 0] : [3500, 510]);
+    final raw =
+        _biometricsMap[safeWeek] ?? (safeWeek < 4 ? [0, 0] : [3500, 510]);
 
     final double weightG = raw[0].toDouble();
     final double lengthMm = raw[1].toDouble();
 
     String wStr;
     if (weightG <= 0) {
-      wStr = l10n.valLessThanOneGram ?? "< 1 g";
+      wStr = l10n.valLessThanOneGram;
     } else if (weightG >= 1000) {
       final kg = (weightG / 1000).toStringAsFixed(1).replaceAll('.0', '');
       wStr = l10n.valKg(kg);
@@ -491,7 +718,7 @@ class _PregnancyData {
 
     String lStr;
     if (lengthMm <= 0) {
-      lStr = l10n.valLessThanOneMm ?? "< 1 mm";
+      lStr = l10n.valLessThanOneMm;
     } else if (lengthMm >= 10) {
       final cm = (lengthMm / 10).toStringAsFixed(1).replaceAll('.0', '');
       lStr = l10n.valCm(cm);
@@ -503,15 +730,15 @@ class _PregnancyData {
   }
 
   static const Map<int, List<num>> _biometricsMap = {
-    1:  [0, 0],
-    2:  [0, 0],
-    3:  [0, 0],
-    4:  [0, 2],
-    5:  [0, 3],
-    6:  [0, 5],
-    7:  [0, 13],
-    8:  [1, 16],
-    9:  [2, 23],
+    1: [0, 0],
+    2: [0, 0],
+    3: [0, 0],
+    4: [0, 2],
+    5: [0, 3],
+    6: [0, 5],
+    7: [0, 13],
+    8: [1, 16],
+    9: [2, 23],
     10: [4, 31],
     11: [7, 41],
     12: [14, 54],

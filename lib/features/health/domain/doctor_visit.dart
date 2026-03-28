@@ -7,21 +7,21 @@ class DoctorVisit {
   Id id;
 
   @Index()
-  DateTime date;           // Дата и время визита
-  String title;            // Название (например, "2-й Скрининг")
-  String? doctorName;      // ФИО Врача или специальность
+  DateTime date; // Дата и время визита
+  String title; // Название (например, "2-й Скрининг")
+  String? doctorName; // ФИО Врача или специальность
 
   // --- ДО ВИЗИТА (Подготовка) ---
-  String? questionsToAsk;  // Список вопросов врачу
+  String? questionsToAsk; // Список вопросов врачу
 
   // --- ВО ВРЕМЯ ВИЗИТА (Показатели) ---
-  double? weightKg;        // Вес на приеме
-  int? bpSystolic;         // Давление (Верхнее)
-  int? bpDiastolic;        // Давление (Нижнее)
+  double? weightKg; // Вес на приеме
+  int? bpSystolic; // Давление (Верхнее)
+  int? bpDiastolic; // Давление (Нижнее)
 
   // --- ПОСЛЕ ВИЗИТА (Итоги) ---
-  String? doctorNotes;     // Заключение, назначения
-  bool isCompleted;        // Визит состоялся?
+  String? doctorNotes; // Заключение, назначения
+  bool isCompleted; // Визит состоялся?
 
   DoctorVisit({
     this.id = Isar.autoIncrement,

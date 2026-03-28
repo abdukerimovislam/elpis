@@ -5,7 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../pregnancy/data/pregnancy_repository.dart';
-// import '../../pregnancy/data/insight_repository.dart'; // Убедись, что этот файл существует
+import '../../pregnancy/data/insight_repository.dart';
+import '../../pregnancy/domain/pregnancy_settings.dart';
 
 // 1. Провайдер истории (Теперь STREAM для реактивности)
 final diaryHistoryProvider = StreamProvider.autoDispose((ref) {
@@ -45,24 +46,20 @@ class DiarySheet extends ConsumerWidget {
           const SizedBox(height: 16),
           // Drag Handle
           Container(
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-              color: mutedTextColor.withOpacity(0.2),
+              color: mutedTextColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 24),
 
           // Заголовок
-          Text(
-              l10n.diaryTitle,
-              style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)
-          ),
+          Text(l10n.diaryTitle,
+              style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)),
           const SizedBox(height: 8),
-          Text(
-              l10n.diarySubtitle,
-              style: theme.textTheme.labelSmall
-          ),
+          Text(l10n.diarySubtitle, style: theme.textTheme.labelSmall),
 
           const SizedBox(height: 24),
 
@@ -70,8 +67,8 @@ class DiarySheet extends ConsumerWidget {
             child: historyAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
-                  child: Text('Error loading diary', style: TextStyle(color: mutedTextColor))
-              ),
+                  child: Text('Error loading diary',
+                      style: TextStyle(color: mutedTextColor))),
               data: (history) {
                 if (history.isEmpty) {
                   return Center(
@@ -80,12 +77,15 @@ class DiarySheet extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.edit_note, size: 64, color: mutedTextColor.withOpacity(0.2)),
+                          Icon(Icons.edit_note,
+                              size: 64,
+                              color: mutedTextColor.withValues(alpha: 0.2)),
                           const SizedBox(height: 16),
                           Text(
                             l10n.diaryEmpty,
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(color: mutedTextColor),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: mutedTextColor),
                           ),
                         ],
                       ),
@@ -93,23 +93,23 @@ class DiarySheet extends ConsumerWidget {
                   );
                 }
 
-                // Получаем настройки (фрукты или нет)
-                // final isFruitMode = settingsAsync.valueOrNull?.isFruitMode ?? true;
+                final settings = settingsAsync.valueOrNull;
+                final visualModeKey = settings?.effectiveVisualModeKey ??
+                    PregnancySettings.visualModeFruit;
+                final languageCode = settings?.languageCode ?? locale;
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   itemCount: history.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final item = history[index];
 
-                    // --- ЛОГИКА ОПРЕДЕЛЕНИЯ ОБЪЕКТА (ЗАГЛУШКА) ---
-                    // В реальном коде раскомментируй InsightRepository
-                    // final objectData = ref.read(insightRepositoryProvider).getObjectData(item.week, locale, isFruitMode);
-                    // final objectTitle = objectData[0];
-
-                    // Пока берем просто номер недели, если репозитория инсайтов нет под рукой
-                    final objectTitle = "Baby Size at Week ${item.week}";
+                    final objectData = ref
+                        .read(insightRepositoryProvider)
+                        .getObjectData(item.week, languageCode, visualModeKey);
+                    final objectTitle = objectData.title;
 
                     return Container(
                       padding: const EdgeInsets.all(20),
@@ -118,10 +118,9 @@ class DiarySheet extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 15,
-                              offset: const Offset(0, 5)
-                          )
+                              offset: const Offset(0, 5))
                         ],
                       ),
                       child: Column(
@@ -131,46 +130,49 @@ class DiarySheet extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
+                                  color: primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
-                                    l10n.weekLabel(item.week),
+                                child: Text(l10n.weekLabel(item.week),
                                     style: theme.textTheme.labelSmall?.copyWith(
                                         color: primaryColor,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 12
-                                    )
-                                ),
+                                        fontSize: 12)),
                               ),
                               Text(
-                                DateFormat.yMMMd(locale).format(item.date ?? DateTime.now()),
-                                style: theme.textTheme.labelSmall?.copyWith(fontSize: 12),
+                                item.date == null
+                                    ? '-'
+                                    : DateFormat.yMMMd(locale)
+                                        .format(item.date!),
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(fontSize: 12),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
-
                           Text(
                             objectTitle,
                             style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                                 color: accentColor,
-                                letterSpacing: 0.5
-                            ),
+                                letterSpacing: 0.5),
                           ),
                           const SizedBox(height: 8),
-
                           Text(
                             item.letterToBaby ?? "",
-                            style: theme.textTheme.bodyMedium?.copyWith(fontSize: 16, height: 1.5),
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(fontSize: 16, height: 1.5),
                           ),
                         ],
                       ),
-                    ).animate().fadeIn(delay: (index * 50).ms).slideY(begin: 0.1, end: 0);
+                    )
+                        .animate()
+                        .fadeIn(delay: (index * 50).ms)
+                        .slideY(begin: 0.1, end: 0);
                   },
                 );
               },

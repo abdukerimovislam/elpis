@@ -6,11 +6,8 @@ class BloomIcon extends StatelessWidget {
   final Color color;
   final double size;
 
-  const BloomIcon(this.assetPath, {
-    super.key,
-    required this.color,
-    this.size = 24
-  });
+  const BloomIcon(this.assetPath,
+      {super.key, required this.color, this.size = 24});
 
   @override
   Widget build(BuildContext context) {

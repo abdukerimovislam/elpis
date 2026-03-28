@@ -74,7 +74,6 @@ class AppTheme {
         seedColor: palette.primary,
         primary: palette.primary,
         secondary: palette.accent,
-        background: palette.backgroundLight,
         surface: palette.backgroundLight,
         onSurface: palette.textMain,
       ),
@@ -98,26 +97,27 @@ class AppTheme {
 
 // Стили текста теперь динамически принимают цвет
 class AppTextStyles {
-  static TextStyle getEmotionalHeader(Color color) => GoogleFonts.playfairDisplay(
-    fontSize: 32,
-    fontWeight: FontWeight.w600,
-    color: color,
-    height: 1.2,
-    letterSpacing: -0.5,
-  );
+  static TextStyle getEmotionalHeader(Color color) =>
+      GoogleFonts.playfairDisplay(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.2,
+        letterSpacing: -0.5,
+      );
 
   static TextStyle getCalmBody(Color color) => GoogleFonts.lato(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: color,
-    height: 1.5,
-  );
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.5,
+      );
 
   static TextStyle getWhisperLabel(Color color) => GoogleFonts.lato(
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    color: color,
-    letterSpacing: 1.0,
-    height: 1.4,
-  );
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: color,
+        letterSpacing: 1.0,
+        height: 1.4,
+      );
 }

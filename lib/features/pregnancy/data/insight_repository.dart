@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../pregnancy/domain/insight.dart';
+import '../../pregnancy/domain/pregnancy_settings.dart';
 
 // ИМПОРТЫ ДАННЫХ
 import 'locales/ru_insights.dart';
@@ -13,7 +14,6 @@ InsightRepository insightRepository(InsightRepositoryRef ref) {
 }
 
 class InsightRepository {
-
   static const Map<String, Map<int, Map<String, dynamic>>> _dataRegistry = {
     'ru': ruInsightsData,
     'en': enInsightsData,
@@ -22,14 +22,32 @@ class InsightRepository {
   // 🔥 ЭКСКЛЮЗИВНЫЕ ДАННЫЕ ДЛЯ РАННИХ НЕДЕЛЬ (Зашиты в код)
   static const Map<String, Map<int, Map<String, String>>> _earlyWeeksData = {
     'ru': {
-      1: {'title': 'Начало цикла', 'description': 'Ваш организм готовится к возможному чуду.'},
-      2: {'title': 'Овуляция', 'description': 'Самый важный момент для зарождения новой жизни.'},
-      3: {'title': 'Зачатие', 'description': 'Маленькая клетка начинает свое большое путешествие.'},
+      1: {
+        'title': 'Начало цикла',
+        'description': 'Ваш организм готовится к возможному чуду.'
+      },
+      2: {
+        'title': 'Овуляция',
+        'description': 'Самый важный момент для зарождения новой жизни.'
+      },
+      3: {
+        'title': 'Зачатие',
+        'description': 'Маленькая клетка начинает свое большое путешествие.'
+      },
     },
     'en': {
-      1: {'title': 'Cycle Start', 'description': 'Your body is preparing for a possible miracle.'},
-      2: {'title': 'Ovulation', 'description': 'The crucial moment for creating new life.'},
-      3: {'title': 'Conception', 'description': 'A tiny cell begins its big journey.'},
+      1: {
+        'title': 'Cycle Start',
+        'description': 'Your body is preparing for a possible miracle.'
+      },
+      2: {
+        'title': 'Ovulation',
+        'description': 'The crucial moment for creating new life.'
+      },
+      3: {
+        'title': 'Conception',
+        'description': 'A tiny cell begins its big journey.'
+      },
     }
   };
 
@@ -40,25 +58,21 @@ class InsightRepository {
   }
 
   // Хелпер: Картинки берем от 4-й недели, если срок меньше
-  int _getSafeImageWeek(int week) {
-    if (week < 4) return 4;
-    if (week > 40) return 40;
-    return week;
-  }
-
   // 1. Метод для СФЕРЫ (Заголовки и описания)
-  ({String title, String description}) getObjectData(int week, String languageCode, bool isFruitMode) {
+  ({String title, String description}) getObjectData(
+      int week, String languageCode, String visualModeKey) {
     final normalizedLang = _normalizeLocale(languageCode);
 
     // --- ЛОГИКА 1: РАННИЕ НЕДЕЛИ (1-3) ---
     if (week < 4) {
       // Пытаемся найти специальный текст для 1-3 недели
-      final specificData = _earlyWeeksData[normalizedLang]?[week] ?? _earlyWeeksData['en']?[week];
+      final specificData = _earlyWeeksData[normalizedLang]?[week] ??
+          _earlyWeeksData['en']?[week];
 
       if (specificData != null) {
         return (
-        title: specificData['title']!,
-        description: specificData['description']!
+          title: specificData['title']!,
+          description: specificData['description']!
         );
       }
     }
@@ -72,15 +86,14 @@ class InsightRepository {
     if (dataMap.containsKey(safeWeek)) {
       final weekData = dataMap[safeWeek]!;
 
-      final modeKey = isFruitMode ? 'fruit' : 'realistic';
-      final fallbackKey = isFruitMode ? 'realistic' : 'fruit';
+      final useFruit = visualModeKey == PregnancySettings.visualModeFruit;
+      final modeKey = useFruit ? 'fruit' : 'realistic';
+      final fallbackKey = useFruit ? 'realistic' : 'fruit';
 
-      final obj = (weekData[modeKey] ?? weekData[fallbackKey]) as Map<String, String>;
+      final obj =
+          (weekData[modeKey] ?? weekData[fallbackKey]) as Map<String, String>;
 
-      return (
-      title: obj['title'] ?? "",
-      description: obj['description'] ?? ""
-      );
+      return (title: obj['title'] ?? "", description: obj['description'] ?? "");
     }
 
     // Заглушка, если ничего не нашлось
@@ -121,11 +134,16 @@ class InsightRepository {
 
   InsightType _parseType(String type) {
     switch (type) {
-      case 'body': return InsightType.body;
-      case 'mind': return InsightType.mind;
-      case 'action': return InsightType.action;
-      case 'baby': return InsightType.baby;
-      default: return InsightType.body;
+      case 'body':
+        return InsightType.body;
+      case 'mind':
+        return InsightType.mind;
+      case 'action':
+        return InsightType.action;
+      case 'baby':
+        return InsightType.baby;
+      default:
+        return InsightType.body;
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 part 'baby_name.g.dart';
 
 enum NameGender { boy, girl, unisex }
+
 enum NameVote { none, liked, disliked }
 
 @collection

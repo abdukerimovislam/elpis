@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
-
-// Убрали старые импорты стилей
-// import '../../../core/theme/app_theme.dart';
-
-import '../data/health_repository.dart'; // Или pregnancy_repository.dart, если объединили
+import '../data/health_repository.dart';
 
 class WaterSheet extends ConsumerStatefulWidget {
   const WaterSheet({super.key});
@@ -16,8 +13,9 @@ class WaterSheet extends ConsumerStatefulWidget {
 }
 
 class _WaterSheetState extends ConsumerState<WaterSheet> {
-  int _glasses = 0;
   final int _goal = 8;
+  int _glasses = 0;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -26,154 +24,209 @@ class _WaterSheetState extends ConsumerState<WaterSheet> {
   }
 
   Future<void> _loadData() async {
-    final record = await ref.read(healthRepositoryProvider).getRecordForDate(DateTime.now());
-    if (mounted) {
-      setState(() {
-        _glasses = record.waterGlasses;
-      });
+    final record = await ref
+        .read(healthRepositoryProvider)
+        .getRecordForDate(DateTime.now());
+    if (!mounted) {
+      return;
     }
+
+    setState(() {
+      _glasses = record.waterGlasses;
+    });
   }
 
-  void _updateWater(int delta) {
-    final newValue = (_glasses + delta).clamp(0, 15);
-    setState(() => _glasses = newValue);
+  Future<void> _updateWater(int delta) async {
+    if (_isSaving) {
+      return;
+    }
 
-    if (delta > 0) {
-      ref.read(healthRepositoryProvider).addWaterGlass(DateTime.now());
-    } else {
-      ref.read(healthRepositoryProvider).removeWaterGlass(DateTime.now());
+    final previousValue = _glasses;
+    final nextValue = (_glasses + delta).clamp(0, 15);
+    if (nextValue == previousValue) {
+      return;
+    }
+
+    setState(() {
+      _glasses = nextValue;
+      _isSaving = true;
+    });
+
+    try {
+      if (delta > 0) {
+        await ref.read(healthRepositoryProvider).addWaterGlass(DateTime.now());
+      } else {
+        await ref
+            .read(healthRepositoryProvider)
+            .removeWaterGlass(DateTime.now());
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _glasses = previousValue;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorGeneric)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    // --- ТЕМИЗАЦИЯ ---
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
     final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
     final bgColor = theme.scaffoldBackgroundColor;
-
     final progress = (_glasses / _goal).clamp(0.0, 1.0);
 
     return Container(
       height: 500,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: bgColor, // Динамический фон
+        color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SizedBox(height: 16),
-          // Drag Handle
           Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                  color: mutedColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2)
-              )
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: mutedColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           const SizedBox(height: 32),
-
           Text(
-              l10n.waterTitle,
-              style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)
+            l10n.waterTitle,
+            style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.waterFact,
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(color: mutedColor, fontSize: 14),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: mutedColor,
+              fontSize: 14,
+            ),
           ),
-
           const Spacer(),
-
-          // ВИЗУАЛИЗАЦИЯ (КРУГ)
           Stack(
             alignment: Alignment.center,
             children: [
-              // Фон круга
               Container(
-                width: 200, height: 200,
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  // Вода всегда голубая, не зависимо от темы
                   border: Border.all(color: const Color(0xFFE0F7FA), width: 2),
                 ),
               ),
-              // Наполнение (Анимированное)
               AnimatedContainer(
                 duration: 600.ms,
                 curve: Curves.easeOutBack,
                 width: 200 * (0.2 + progress * 0.8),
                 height: 200 * (0.2 + progress * 0.8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB2EBF2).withOpacity(0.5),
+                  color: const Color(0xFFB2EBF2).withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
               ),
-              // Цифра
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                      "$_glasses",
-                      style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.bold,
-                          color: mainTextColor
-                      )
+                    '$_glasses',
+                    style: TextStyle(
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      color: mainTextColor,
+                    ),
                   ),
-                  Text(
-                      l10n.waterProgress(_goal),
-                      style: theme.textTheme.labelSmall
-                  ),
+                  Text(l10n.waterProgress(_goal),
+                      style: theme.textTheme.labelSmall),
                 ],
               ),
             ],
           ),
-
           const Spacer(),
-
-          // КНОПКИ + / -
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildButton(Icons.remove, () => _updateWater(-1), theme),
+              _buildButton(
+                Icons.remove,
+                () => _updateWater(-1),
+                theme,
+              ),
               const SizedBox(width: 40),
-              _buildButton(Icons.add, () => _updateWater(1), theme, isPrimary: true),
+              _buildButton(
+                Icons.add,
+                () => _updateWater(1),
+                theme,
+                isPrimary: true,
+              ),
             ],
           ),
-
-          const SizedBox(height: 48),
+          const SizedBox(height: 12),
+          if (_isSaving)
+            SizedBox(
+              height: 20,
+              child: Text(
+                l10n.commonSave,
+                style: theme.textTheme.labelSmall?.copyWith(color: mutedColor),
+              ),
+            )
+          else
+            const SizedBox(height: 20),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildButton(IconData icon, VoidCallback onTap, ThemeData theme, {bool isPrimary = false}) {
+  Widget _buildButton(
+    IconData icon,
+    VoidCallback onTap,
+    ThemeData theme, {
+    bool isPrimary = false,
+  }) {
     final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
-    final secondaryBg = theme.colorScheme.surfaceContainerHighest ?? Colors.grey.shade200;
+    final secondaryBg = theme.colorScheme.surfaceContainerHighest;
+    final isDisabled = _isSaving;
 
-    Widget button = Container(
-      width: 64, height: 64,
+    final button = Container(
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
-        // Для кнопки "+" используем голубой (вода), для "-" нейтральный фон темы
         color: isPrimary ? const Color(0xFFE0F7FA) : secondaryBg,
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: 32, color: mainTextColor),
+      child: Icon(
+        icon,
+        size: 32,
+        color:
+            isDisabled ? mainTextColor.withValues(alpha: 0.4) : mainTextColor,
+      ),
     );
 
-    Widget clickable = GestureDetector(onTap: onTap, child: button);
+    final clickable = GestureDetector(
+      onTap: isDisabled ? null : onTap,
+      child: Opacity(opacity: isDisabled ? 0.6 : 1, child: button),
+    );
 
     if (isPrimary) {
       return clickable
-          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .animate(onPlay: (controller) => controller.repeat(reverse: true))
           .scaleXY(end: 1.1, duration: 1.5.seconds, curve: Curves.easeInOut);
     }
 

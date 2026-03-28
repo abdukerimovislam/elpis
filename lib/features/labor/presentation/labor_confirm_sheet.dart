@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
 import '../../pregnancy/data/pregnancy_repository.dart';
-import '../../pregnancy/domain/pregnancy_settings.dart';
 import '../data/labor_mode_provider.dart';
 
 class LaborConfirmSheet extends ConsumerStatefulWidget {
@@ -14,35 +14,69 @@ class LaborConfirmSheet extends ConsumerStatefulWidget {
 
 class _LaborConfirmSheetState extends ConsumerState<LaborConfirmSheet> {
   final _phoneController = TextEditingController();
+
   bool _isNotifying = true;
+  bool _isStarting = false;
 
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(pregnancyRepositoryProvider).watchSettings().first;
-    settings.then((s) {
-      if (s?.partnerPhone != null) {
-        _phoneController.text = s!.partnerPhone!;
-      }
-    });
+    _loadPartnerPhone();
   }
 
-  void _startLabor() async {
+  Future<void> _loadPartnerPhone() async {
+    final settings =
+        await ref.read(pregnancyRepositoryProvider).watchSettings().first;
+
+    if (!mounted || settings?.partnerPhone == null) {
+      return;
+    }
+
+    _phoneController.text = settings!.partnerPhone!;
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startLabor() async {
+    if (_isStarting) {
+      return;
+    }
+
     final phone = _phoneController.text.trim();
+    setState(() => _isStarting = true);
 
-    // Сохраняем телефон, если изменился
-    if (phone.isNotEmpty) {
-      await ref.read(laborModeProvider.notifier).saveContacts(partnerPhone: phone);
+    try {
+      if (phone.isNotEmpty) {
+        await ref.read(laborModeProvider.notifier).saveContacts(
+              partnerPhone: phone,
+            );
+      }
+
+      await ref.read(laborModeProvider.notifier).toggleLaborMode(true);
+
+      if (_isNotifying && phone.isNotEmpty && mounted) {
+        await ref
+            .read(laborModeProvider.notifier)
+            .notifyPartner(context, phone, '');
+      }
+
+      if (!mounted) {
+        return;
+      }
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.errorGeneric)),
+      );
+      setState(() => _isStarting = false);
     }
-
-    await ref.read(laborModeProvider.notifier).toggleLaborMode(true);
-
-    if (_isNotifying && phone.isNotEmpty && mounted) {
-      // Имя партнера можно подтянуть из настроек, пока заглушка "Partner"
-      await ref.read(laborModeProvider.notifier).notifyPartner(context, phone, "");
-    }
-
-    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -51,8 +85,10 @@ class _LaborConfirmSheetState extends ConsumerState<LaborConfirmSheet> {
 
     return Container(
       padding: EdgeInsets.only(
-          left: 24, right: 24, top: 32,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 32
+        left: 24,
+        right: 24,
+        top: 32,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -63,64 +99,86 @@ class _LaborConfirmSheetState extends ConsumerState<LaborConfirmSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.laborConfirmTitle, // Убрал const
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
+            l10n.laborConfirmTitle,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3142),
+            ),
           ),
           const SizedBox(height: 12),
           Text(
-            l10n.laborConfirmBody, // Убрал const
+            l10n.laborConfirmBody,
             style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
-
           const SizedBox(height: 32),
-
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            enabled: !_isStarting,
             decoration: InputDecoration(
-              labelText: l10n.laborConfirmPartnerPhone, // Убрал const
+              labelText: l10n.laborConfirmPartnerPhone,
               prefixIcon: const Icon(Icons.phone),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               filled: true,
               fillColor: Colors.grey[100],
             ),
           ),
-
           const SizedBox(height: 16),
-
           SwitchListTile(
             value: _isNotifying,
-            onChanged: (val) => setState(() => _isNotifying = val),
-            title: Text(l10n.laborConfirmNotifySwitch), // Убрал const
-            activeColor: const Color(0xFFFF9A9E),
+            onChanged: _isStarting
+                ? null
+                : (value) => setState(() => _isNotifying = value),
+            title: Text(l10n.laborConfirmNotifySwitch),
+            activeThumbColor: const Color(0xFFFF9A9E),
             contentPadding: EdgeInsets.zero,
           ),
-
           const SizedBox(height: 32),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _startLabor,
+              onPressed: _isStarting ? null : _startLabor,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 backgroundColor: const Color(0xFFFF9A9E),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 elevation: 8,
-                shadowColor: const Color(0xFFFF9A9E).withOpacity(0.5),
+                shadowColor: const Color(0xFFFF9A9E).withValues(alpha: 0.5),
               ),
-              child: Text(
-                l10n.laborConfirmStartBtn, // Убрал const
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1),
-              ),
+              child: _isStarting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.laborConfirmStartBtn,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 1,
+                      ),
+                    ),
             ),
           ),
           Center(
             child: TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.laborConfirmFalseAlarm, style: const TextStyle(color: Colors.grey)), // Убрал const
+              onPressed: _isStarting ? null : () => Navigator.pop(context),
+              child: Text(
+                l10n.laborConfirmFalseAlarm,
+                style: const TextStyle(color: Colors.grey),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

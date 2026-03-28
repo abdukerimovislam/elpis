@@ -38,7 +38,6 @@ class ChecklistRepository {
   Future<void> ensureInitialized(AppLocalizations l10n) async {
     final count = await _isar.checklistItems.count();
     if (count == 0) {
-
       // Генерируем список на основе текущего языка
       final List<ChecklistItem> defaultItems = [
         // ДОКУМЕНТЫ

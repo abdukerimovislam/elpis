@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:isar/isar.dart';
@@ -48,13 +49,17 @@ void main() async {
   ));
 
   // ⚠️ КОНФИГУРАЦИЯ ТЕСТОВ
-  const bool useMockSubscriptions = true;
+  const bool useMockSubscriptions = bool.fromEnvironment(
+    'USE_MOCK_SUBSCRIPTIONS',
+    defaultValue: kDebugMode,
+  );
 
   // 4. Инициализация ProviderContainer с переопределениями (Overrides)
   final container = ProviderContainer(
     overrides: [
       if (useMockSubscriptions)
-        subscriptionRepositoryProvider.overrideWithValue(MockSubscriptionRepository()),
+        subscriptionRepositoryProvider
+            .overrideWithValue(MockSubscriptionRepository()),
     ],
   );
 
@@ -63,6 +68,13 @@ void main() async {
     isarInstance = await container.read(isarDatabaseProvider.future);
   } catch (e) {
     debugPrint("CRITICAL ERROR: Failed to initialize Isar: $e");
+    runApp(
+      UncontrolledProviderScope(
+        container: container,
+        child: StartupErrorApp(error: e.toString()),
+      ),
+    );
+    return;
   }
 
   runApp(
@@ -79,7 +91,8 @@ class BloomApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Слушаем поток настроек прямо из репозитория
-    final settingsStream = ref.watch(pregnancyRepositoryProvider).watchSettings();
+    final settingsStream =
+        ref.watch(pregnancyRepositoryProvider).watchSettings();
 
     return StreamBuilder<PregnancySettings?>(
       stream: settingsStream,
@@ -91,7 +104,8 @@ class BloomApp extends ConsumerWidget {
         final themeKey = settings?.themeKey ?? 'serenity';
 
         // 2. ЛОГИКА ЯЗЫКА
-        final userLocale = settings != null ? Locale(settings.languageCode) : null;
+        final userLocale =
+            settings != null ? Locale(settings.languageCode) : null;
 
         return MaterialApp(
           title: 'Bloom Mama',
@@ -119,7 +133,8 @@ class BloomApp extends ConsumerWidget {
             builder: (context) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Scaffold(
-                  backgroundColor: AppTheme.getTheme('serenity').scaffoldBackgroundColor,
+                  backgroundColor:
+                      AppTheme.getTheme('serenity').scaffoldBackgroundColor,
                   body: const Center(child: CircularProgressIndicator()),
                 );
               }
@@ -140,6 +155,44 @@ class BloomApp extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class StartupErrorApp extends StatelessWidget {
+  final String error;
+
+  const StartupErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 48, color: Colors.redAccent),
+                const SizedBox(height: 16),
+                const Text(
+                  'Bloom Mama could not start correctly.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

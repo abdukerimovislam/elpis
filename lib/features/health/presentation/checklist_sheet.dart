@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../l10n/app_localizations.dart';
-
-// Убрали старый импорт
-// import '../../../core/theme/app_theme.dart';
-
-import '../data/checklist_repository.dart';
 import '../data/checklist_item.dart';
+import '../data/checklist_repository.dart';
 
 class ChecklistSheet extends ConsumerStatefulWidget {
   const ChecklistSheet({super.key});
@@ -16,21 +13,68 @@ class ChecklistSheet extends ConsumerStatefulWidget {
   ConsumerState<ChecklistSheet> createState() => _ChecklistSheetState();
 }
 
-class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTickerProviderStateMixin {
+class _ChecklistSheetState extends ConsumerState<ChecklistSheet>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Set<int> _pendingItems = {};
+  bool _isInitializing = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    // Инициализация данных (текстов) при первом запуске
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context)!;
-        ref.read(checklistRepositoryProvider).ensureInitialized(l10n);
-      }
+      _initializeChecklist();
     });
+  }
+
+  Future<void> _initializeChecklist() async {
+    if (!mounted || _isInitializing) {
+      return;
+    }
+
+    setState(() => _isInitializing = true);
+
+    try {
+      final l10n = AppLocalizations.of(context)!;
+      await ref.read(checklistRepositoryProvider).ensureInitialized(l10n);
+    } catch (_) {
+      if (mounted) {
+        _showError();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isInitializing = false);
+      }
+    }
+  }
+
+  Future<void> _toggleItem(ChecklistItem item) async {
+    if (_pendingItems.contains(item.id)) {
+      return;
+    }
+
+    setState(() => _pendingItems.add(item.id));
+
+    try {
+      await ref.read(checklistRepositoryProvider).toggleItem(item.id);
+    } catch (_) {
+      if (mounted) {
+        _showError();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _pendingItems.remove(item.id));
+      }
+    }
+  }
+
+  void _showError() {
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.errorGeneric)),
+    );
   }
 
   @override
@@ -42,61 +86,55 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
-    // --- ТЕМИЗАЦИЯ ---
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-    final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
     final bgColor = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
-        color: bgColor, // Динамический фон
+        color: bgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
           const SizedBox(height: 16),
-          // Drag Handle
           Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                  color: mutedColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2)
-              )
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: mutedColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           const SizedBox(height: 24),
-
           Text(
-              l10n.checklistTitle,
-              style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)
+            l10n.checklistTitle,
+            style: theme.textTheme.displayLarge?.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 16),
-
-          // 2. ГЛАВНЫЙ STREAM BUILDER
           Expanded(
             child: StreamBuilder<List<ChecklistItem>>(
               stream: ref.watch(checklistRepositoryProvider).watchItems(),
               builder: (context, snapshot) {
-                // Если данных нет или загрузка
+                if (_isInitializing && !snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 final allItems = snapshot.data!;
-
-                // Расчет прогресса
-                final completed = allItems.where((e) => e.isCompleted).length;
+                final completed =
+                    allItems.where((item) => item.isCompleted).length;
                 final total = allItems.length;
                 final percent = total == 0 ? 0.0 : completed / total;
                 final percentInt = (percent * 100).toInt();
 
                 return Column(
                   children: [
-                    // A. ПРОГРЕСС БАР
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
@@ -105,8 +143,8 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
                             borderRadius: BorderRadius.circular(4),
                             child: LinearProgressIndicator(
                               value: percent,
-                              // Фон полоски серый, заполнение - цветом темы
-                              backgroundColor: mutedColor.withOpacity(0.1),
+                              backgroundColor:
+                                  mutedColor.withValues(alpha: 0.1),
                               valueColor: AlwaysStoppedAnimation(primaryColor),
                               minHeight: 8,
                             ),
@@ -119,16 +157,14 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // B. ТАБЫ (Заголовки)
                     TabBar(
                       controller: _tabController,
-                      // Цвета табов берем из темы
                       labelColor: primaryColor,
                       unselectedLabelColor: mutedColor,
-                      labelStyle: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                      labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                       indicatorColor: primaryColor,
                       indicatorSize: TabBarIndicatorSize.label,
                       dividerColor: Colors.transparent,
@@ -138,15 +174,31 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
                         Tab(text: l10n.checklistTabBaby),
                       ],
                     ),
-
-                    // C. СПИСКИ (Контент табов)
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
                         children: [
-                          _buildList(allItems.where((e) => e.category == "docs").toList(), l10n, theme),
-                          _buildList(allItems.where((e) => e.category == "mom").toList(), l10n, theme),
-                          _buildList(allItems.where((e) => e.category == "baby").toList(), l10n, theme),
+                          _buildList(
+                            allItems
+                                .where((item) => item.category == 'docs')
+                                .toList(),
+                            l10n,
+                            theme,
+                          ),
+                          _buildList(
+                            allItems
+                                .where((item) => item.category == 'mom')
+                                .toList(),
+                            l10n,
+                            theme,
+                          ),
+                          _buildList(
+                            allItems
+                                .where((item) => item.category == 'baby')
+                                .toList(),
+                            l10n,
+                            theme,
+                          ),
                         ],
                       ),
                     ),
@@ -160,7 +212,11 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
     );
   }
 
-  Widget _buildList(List<ChecklistItem> items, AppLocalizations l10n, ThemeData theme) {
+  Widget _buildList(
+    List<ChecklistItem> items,
+    AppLocalizations l10n,
+    ThemeData theme,
+  ) {
     final primaryColor = theme.primaryColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
     final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
@@ -168,10 +224,7 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
 
     if (items.isEmpty) {
       return Center(
-          child: Text(
-              l10n.checklistEmpty,
-              style: theme.textTheme.labelSmall
-          )
+        child: Text(l10n.checklistEmpty, style: theme.textTheme.labelSmall),
       );
     }
 
@@ -181,38 +234,62 @@ class _ChecklistSheetState extends ConsumerState<ChecklistSheet> with SingleTick
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = items[index];
+        final isPending = _pendingItems.contains(item.id);
+
         return GestureDetector(
-          onTap: () {
-            ref.read(checklistRepositoryProvider).toggleItem(item.id);
-          },
+          onTap: isPending ? null : () => _toggleItem(item),
           child: AnimatedContainer(
             duration: 200.ms,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              // Если выполнено - легкий оттенок темы, иначе цвет карточки
-              color: item.isCompleted ? primaryColor.withOpacity(0.1) : cardColor,
+              color: item.isCompleted
+                  ? primaryColor.withValues(alpha: 0.1)
+                  : cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color: item.isCompleted ? Colors.transparent : mutedColor.withOpacity(0.1)
+                color: item.isCompleted
+                    ? Colors.transparent
+                    : mutedColor.withValues(alpha: 0.1),
               ),
-              boxShadow: item.isCompleted ? [] : [
-                BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))
-              ],
+              boxShadow: item.isCompleted
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Row(
               children: [
-                Icon(
-                  item.isCompleted ? Icons.check_circle : Icons.circle_outlined,
-                  color: item.isCompleted ? primaryColor : mutedColor.withOpacity(0.3),
-                ),
+                if (isPending)
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: primaryColor,
+                    ),
+                  )
+                else
+                  Icon(
+                    item.isCompleted
+                        ? Icons.check_circle
+                        : Icons.circle_outlined,
+                    color: item.isCompleted
+                        ? primaryColor
+                        : mutedColor.withValues(alpha: 0.3),
+                  ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     item.title,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: item.isCompleted ? mutedColor : mainTextColor,
-                      decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                      decorationColor: mutedColor, // Цвет зачеркивания
+                      decoration:
+                          item.isCompleted ? TextDecoration.lineThrough : null,
+                      decorationColor: mutedColor,
                     ),
                   ),
                 ),

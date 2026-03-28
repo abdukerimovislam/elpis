@@ -34,7 +34,7 @@ class GlassCard extends StatelessWidget {
     final themeCardColor = Theme.of(context).cardColor;
 
     // Если цвет не передан, берем из темы с прозрачностью
-    final effectiveColor = color ?? themeCardColor.withOpacity(0.65);
+    final effectiveColor = color ?? themeCardColor.withValues(alpha: 0.65);
 
     // Логика: если forceNoBlur == true, мы НЕ используем блюр.
     final useBlur = !forceNoBlur;
@@ -45,7 +45,7 @@ class GlassCard extends StatelessWidget {
       height: height,
       padding: padding,
       // Если блюра нет, делаем фон чуть плотнее, чтобы текст читался
-      color: useBlur ? effectiveColor : effectiveColor.withOpacity(0.9),
+      color: useBlur ? effectiveColor : effectiveColor.withValues(alpha: 0.9),
       child: child,
     );
 
@@ -63,12 +63,12 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.white.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             spreadRadius: 2,
             offset: const Offset(0, 8),

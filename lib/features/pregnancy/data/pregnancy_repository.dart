@@ -3,9 +3,6 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-// ИМПОРТ ЛОКАЛИЗАЦИИ
-import '../../../l10n/app_localizations.dart';
-
 // ИМПОРТЫ МОДЕЛЕЙ
 import '../domain/week_snapshot.dart';
 import '../../pregnancy/domain/pregnancy_settings.dart';
@@ -40,13 +37,7 @@ Future<Isar> isarDatabase(IsarDatabaseRef ref) async {
 
 @Riverpod(keepAlive: true)
 PregnancyRepository pregnancyRepository(PregnancyRepositoryRef ref) {
-  final isarAsync = ref.watch(isarDatabaseProvider);
-
-  if (isarAsync.isLoading || isarAsync.hasError) {
-    throw UnimplementedError('Database is not ready yet');
-  }
-
-  return PregnancyRepository(isarAsync.requireValue);
+  return PregnancyRepository(ref.watch(isarDatabaseProvider).requireValue);
 }
 
 class PregnancyRepository {
@@ -64,7 +55,12 @@ class PregnancyRepository {
     } catch (e, stack) {
       debugPrint("🛑 DATABASE ERROR: $e");
       debugPrint(stack.toString());
+      rethrow;
     }
+  }
+
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
   // -------------------------------------------------------
@@ -80,7 +76,15 @@ class PregnancyRepository {
   }
 
   Future<void> setFruitMode(bool isFruit) async {
-    await updateSettings(isFruitMode: isFruit);
+    await setVisualMode(
+      isFruit
+          ? PregnancySettings.visualModeFruit
+          : PregnancySettings.visualModeRealistic,
+    );
+  }
+
+  Future<void> setVisualMode(String visualModeKey) async {
+    await updateSettings(visualModeKey: visualModeKey);
   }
 
   /// ОБНОВЛЕННЫЙ МЕТОД: Теперь принимает поля для Labor Mode
@@ -91,6 +95,7 @@ class PregnancyRepository {
     double? height,
     String? languageCode,
     bool? isFruitMode,
+    String? visualModeKey,
     String? themeKey,
     // --- Поля родов ---
     bool? isLaborMode,
@@ -106,15 +111,28 @@ class PregnancyRepository {
       if (settings != null) {
         if (name != null) settings.babyName = name;
         if (dueDate != null) settings.estimatedDueDate = dueDate;
-        if (prePregnancyWeight != null) settings.prePregnancyWeightKg = prePregnancyWeight;
+        if (prePregnancyWeight != null) {
+          settings.prePregnancyWeightKg = prePregnancyWeight;
+        }
         if (height != null) settings.heightCm = height;
         if (languageCode != null) settings.languageCode = languageCode;
         if (isFruitMode != null) settings.isFruitMode = isFruitMode;
+        if (visualModeKey != null) {
+          settings.visualModeKey = visualModeKey;
+          settings.isFruitMode =
+              visualModeKey == PregnancySettings.visualModeFruit;
+        } else if (isFruitMode != null) {
+          settings.visualModeKey = isFruitMode
+              ? PregnancySettings.visualModeFruit
+              : PregnancySettings.visualModeRealistic;
+        }
         if (themeKey != null) settings.themeKey = themeKey;
 
         // Labor Mode
         if (isLaborMode != null) settings.isLaborMode = isLaborMode;
-        if (showLaborButton != null) settings.showLaborButton = showLaborButton; // <-- СОХРАНЯЕМ
+        if (showLaborButton != null) {
+          settings.showLaborButton = showLaborButton; // <-- ??????????????????
+        }
 
         if (partnerName != null) settings.partnerName = partnerName;
         if (partnerPhone != null) settings.partnerPhone = partnerPhone;
@@ -124,12 +142,17 @@ class PregnancyRepository {
         await _isar.pregnancySettings.put(settings);
       } else {
         final newSettings = PregnancySettings(
-          estimatedDueDate: dueDate ?? DateTime.now().add(const Duration(days: 280)),
+          estimatedDueDate:
+              dueDate ?? DateTime.now().add(const Duration(days: 280)),
           babyName: name,
           prePregnancyWeightKg: prePregnancyWeight,
           heightCm: height,
           languageCode: languageCode ?? 'en',
           isFruitMode: isFruitMode ?? true,
+          visualModeKey: visualModeKey ??
+              (isFruitMode == false
+                  ? PregnancySettings.visualModeRealistic
+                  : PregnancySettings.visualModeFruit),
           themeKey: themeKey ?? 'serenity',
           isLaborMode: isLaborMode ?? false,
           showLaborButton: showLaborButton ?? true, // <-- DEFAULT
@@ -154,7 +177,10 @@ class PregnancyRepository {
   }
 
   Stream<PregnancySettings?> watchSettings() {
-    return _isar.pregnancySettings.where().watch(fireImmediately: true).map((e) => e.firstOrNull);
+    return _isar.pregnancySettings
+        .where()
+        .watch(fireImmediately: true)
+        .map((e) => e.firstOrNull);
   }
 
   // -------------------------------------------------------
@@ -162,19 +188,19 @@ class PregnancyRepository {
   // -------------------------------------------------------
 
   Future<WeekSnapshot> getOrCreateSnapshot(int week) async {
-    final existing = await _isar.weekSnapshots.filter().weekEqualTo(week).findFirst();
+    final existing =
+        await _isar.weekSnapshots.filter().weekEqualTo(week).findFirst();
     if (existing != null) return existing;
     return WeekSnapshot(week: week);
   }
 
   Future<void> saveLetter(int week, String letter) async {
     await _safeWrite(() async {
-      var snapshot = await _isar.weekSnapshots.filter().weekEqualTo(week).findFirst();
-      if (snapshot == null) {
-        snapshot = WeekSnapshot(week: week);
-      }
+      var snapshot =
+          await _isar.weekSnapshots.filter().weekEqualTo(week).findFirst();
+      snapshot ??= WeekSnapshot(week: week);
       snapshot.letterToBaby = letter;
-      snapshot.date = DateTime.now();
+      snapshot.date = _normalizeDate(DateTime.now());
       await _isar.weekSnapshots.put(snapshot);
     });
   }
@@ -205,8 +231,9 @@ class PregnancyRepository {
   // -------------------------------------------------------
 
   Future<HealthRecord> _getOrCreateHealthRecord(DateTime date) async {
-    final day = DateTime(date.year, date.month, date.day);
-    final existing = await _isar.healthRecords.filter().dateEqualTo(day).findFirst();
+    final day = _normalizeDate(date);
+    final existing =
+        await _isar.healthRecords.filter().dateEqualTo(day).findFirst();
     return existing ?? HealthRecord(date: day);
   }
 
@@ -234,6 +261,32 @@ class PregnancyRepository {
         .findAll();
   }
 
+  Future<List<String>> getRecentSymptoms({int limit = 6}) async {
+    final records = await _isar.healthRecords
+        .filter()
+        .symptomsIsNotNull()
+        .and()
+        .symptomsIsNotEmpty()
+        .sortByDateDesc()
+        .findAll();
+
+    final uniqueSymptoms = <String>{};
+    final result = <String>[];
+
+    for (final record in records) {
+      for (final symptom in record.symptoms ?? const <String>[]) {
+        if (uniqueSymptoms.add(symptom)) {
+          result.add(symptom);
+          if (result.length >= limit) {
+            return result;
+          }
+        }
+      }
+    }
+
+    return result;
+  }
+
   Future<void> addWaterGlass(DateTime date) async {
     await _safeWrite(() async {
       final record = await _getOrCreateHealthRecord(date);
@@ -256,11 +309,10 @@ class PregnancyRepository {
     return _getOrCreateHealthRecord(date);
   }
 
-  Future<void> saveSymptoms({
-    required DateTime date,
-    required List<String> symptoms,
-    required int mood
-  }) async {
+  Future<void> saveSymptoms(
+      {required DateTime date,
+      required List<String> symptoms,
+      required int mood}) async {
     await _safeWrite(() async {
       final record = await _getOrCreateHealthRecord(date);
       record.symptoms = symptoms;
@@ -269,7 +321,8 @@ class PregnancyRepository {
     });
   }
 
-  Future<void> saveKickSession({required DateTime date, required int kicks}) async {
+  Future<void> saveKickSession(
+      {required DateTime date, required int kicks}) async {
     await _safeWrite(() async {
       final record = await _getOrCreateHealthRecord(date);
       record.totalKicks += kicks;
@@ -300,9 +353,7 @@ class PregnancyRepository {
 
   Future<void> clearAllData() async {
     await _safeWrite(() async {
-      await _isar.writeTxn(() async {
-        await _isar.clear(); // Полная очистка всей базы
-      });
+      await _isar.clear(); // Полная очистка всей базы
     });
   }
 
@@ -333,7 +384,10 @@ class PregnancyRepository {
   }
 
   Stream<List<Contraction>> watchContractions() {
-    return _isar.contractions.where().sortByStartTimeDesc().watch(fireImmediately: true);
+    return _isar.contractions
+        .where()
+        .sortByStartTimeDesc()
+        .watch(fireImmediately: true);
   }
 
   Future<void> clearContractions() async {
@@ -377,7 +431,10 @@ class PregnancyRepository {
   }
 
   Stream<List<ChecklistItem>> watchChecklist(String category) {
-    return _isar.checklistItems.filter().categoryEqualTo(category).watch(fireImmediately: true);
+    return _isar.checklistItems
+        .filter()
+        .categoryEqualTo(category)
+        .watch(fireImmediately: true);
   }
 
   // -------------------------------------------------------
@@ -395,7 +452,10 @@ class PregnancyRepository {
   }
 
   Stream<List<BabyName>> watchLikedNames() {
-    return _isar.babyNames.filter().voteEqualTo(NameVote.liked).watch(fireImmediately: true);
+    return _isar.babyNames
+        .filter()
+        .voteEqualTo(NameVote.liked)
+        .watch(fireImmediately: true);
   }
 
   // -------------------------------------------------------
@@ -404,24 +464,25 @@ class PregnancyRepository {
 
   Future<void> saveBumpPhoto(int week, String fileName) async {
     await _safeWrite(() async {
-      final existing = await _isar.bumpSnapshots.filter().weekEqualTo(week).findFirst();
+      final existing =
+          await _isar.bumpSnapshots.filter().weekEqualTo(week).findFirst();
       if (existing != null) {
         existing.fileName = fileName;
         existing.date = DateTime.now();
         await _isar.bumpSnapshots.put(existing);
       } else {
-        final newPhoto = BumpSnapshot(
-            week: week,
-            fileName: fileName,
-            date: DateTime.now()
-        );
+        final newPhoto =
+            BumpSnapshot(week: week, fileName: fileName, date: DateTime.now());
         await _isar.bumpSnapshots.put(newPhoto);
       }
     });
   }
 
   Stream<List<BumpSnapshot>> watchBumpGallery() {
-    return _isar.bumpSnapshots.where().sortByWeekDesc().watch(fireImmediately: true);
+    return _isar.bumpSnapshots
+        .where()
+        .sortByWeekDesc()
+        .watch(fireImmediately: true);
   }
 
   Future<void> deleteBumpPhoto(Id id) async {
