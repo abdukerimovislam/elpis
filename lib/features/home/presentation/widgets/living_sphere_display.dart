@@ -13,7 +13,7 @@ import '../../../pregnancy/data/pregnancy_repository.dart';
 import '../../../pregnancy/domain/pregnancy_settings.dart';
 
 final pregnancySettingsStreamProvider =
-    StreamProvider<PregnancySettings?>((ref) {
+StreamProvider<PregnancySettings?>((ref) {
   final repository = ref.watch(pregnancyRepositoryProvider);
   return repository.watchSettings();
 });
@@ -71,7 +71,7 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
 
     final currentIndex = _modeOrder.indexOf(currentMode);
     final nextMode = _modeOrder[
-        (currentIndex == -1 ? 0 : currentIndex + 1) % _modeOrder.length];
+    (currentIndex == -1 ? 0 : currentIndex + 1) % _modeOrder.length];
 
     setState(() {
       _isSavingMode = true;
@@ -109,10 +109,12 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
 
     final growthData = FetalGrowthMapper.forWeek(safeWeek.clamp(1, 40));
     final isGrowthMode = visualModeKey == PregnancySettings.visualModeGrowth;
+
     final imagePath = switch (visualModeKey) {
       PregnancySettings.visualModeFruit =>
-        'assets/images/fruits/week_$imageWeek.webp',
+      'assets/images/fruits/week_$imageWeek.webp',
       PregnancySettings.visualModeGrowth => growthData.assetPath,
+    // Режим реалистичных предметов (маковое зернышко и тд)
       _ => 'assets/images/realistic/week_$imageWeek.webp',
     };
     final biometrics = _PregnancyData.getForWeek(safeWeek, l10n);
@@ -123,6 +125,31 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
         final double contentSize = math.min(availableWidth, 400.0);
         final double orbitSize = contentSize * 0.9;
         final double sphereSize = contentSize * 0.82;
+
+        Widget sphereImageContent;
+
+        // Анимация показывается СТРОГО только для режима "Развитие плода" (fetal growth) на 1-й неделе
+        if (safeWeek == 1 && isGrowthMode) {
+          sphereImageContent = CellDevelopmentAnimation(size: sphereSize);
+        }
+        // Если режим "Развитие плода" и срок больше 1 недели
+        else if (isGrowthMode) {
+          sphereImageContent = _GrowthSphereImage(
+            sphereSize: sphereSize,
+            imagePath: imagePath,
+            growthData: growthData,
+            week: safeWeek.clamp(1, 40),
+            transitionDirection: _weekTransitionDirection,
+          );
+        }
+        // Для режимов "Фрукты" и "Реалистичные предметы" всегда показываем статичную картинку
+        else {
+          sphereImageContent = OptimizedImage(
+            path: imagePath,
+            height: sphereSize * 0.6,
+            memCacheWidth: 800,
+          );
+        }
 
         return RepaintBoundary(
           child: Transform.scale(
@@ -181,25 +208,14 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
                                     ),
                                   );
                                 },
-                                child: Transform.translate(
+                                child: RepaintBoundary(
                                   key: ValueKey<String>(
                                     '$visualModeKey-$imageWeek-${safeWeek.clamp(1, 40)}',
                                   ),
-                                  offset: Offset(0, isGrowthMode ? 4 : 0),
-                                  child: isGrowthMode
-                                      ? _GrowthSphereImage(
-                                          sphereSize: sphereSize,
-                                          imagePath: imagePath,
-                                          growthData: growthData,
-                                          week: safeWeek.clamp(1, 40),
-                                          transitionDirection:
-                                              _weekTransitionDirection,
-                                        )
-                                      : OptimizedImage(
-                                          path: imagePath,
-                                          height: sphereSize * 0.6,
-                                          memCacheWidth: 800,
-                                        ),
+                                  child: Transform.translate(
+                                    offset: Offset(0, isGrowthMode ? 4 : 0),
+                                    child: sphereImageContent,
+                                  ),
                                 ),
                               ),
                             ],
@@ -244,6 +260,71 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
   }
 }
 
+/// Виджет для анимации развития клетки (stage0.1 - stage0.5)
+class CellDevelopmentAnimation extends StatefulWidget {
+  final double size;
+
+  const CellDevelopmentAnimation({super.key, required this.size});
+
+  @override
+  State<CellDevelopmentAnimation> createState() =>
+      _CellDevelopmentAnimationState();
+}
+
+class _CellDevelopmentAnimationState extends State<CellDevelopmentAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  int _stage = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        if (mounted) {
+          setState(() {
+            _stage = (_stage % 5) + 1; // Зацикливаем 1 -> 5
+          });
+          _controller.forward(from: 0.0);
+        }
+      }
+    });
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 800),
+      switchInCurve: Curves.easeIn,
+      switchOutCurve: Curves.easeOut,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: child,
+      ),
+      child: RepaintBoundary(
+        key: ValueKey<int>(_stage),
+        child: OptimizedImage(
+          // ИСПРАВЛЕНО: Теперь 100% правильный путь через ДЕФИС
+          path: 'assets/images/fetal_growth/realistic/stage0.$_stage.png',
+          height: widget.size * 0.6,
+          memCacheWidth: 800,
+        ),
+      ),
+    );
+  }
+}
+
 class _ModeToggleButton extends StatelessWidget {
   final String visualModeKey;
   final bool isSaving;
@@ -265,20 +346,20 @@ class _ModeToggleButton extends StatelessWidget {
 
     final (IconData icon, String label, int target) = switch (visualModeKey) {
       PregnancySettings.visualModeFruit => (
-          Icons.eco_rounded,
-          l10n.visualModeFruit,
-          0,
-        ),
+      Icons.eco_rounded,
+      l10n.visualModeFruit,
+      0,
+      ),
       PregnancySettings.visualModeGrowth => (
-          Icons.child_friendly_rounded,
-          isRu ? 'Развитие' : 'Growth',
-          2,
-        ),
+      Icons.child_friendly_rounded,
+      isRu ? 'Развитие' : 'Growth',
+      2,
+      ),
       _ => (
-          Icons.widgets_rounded,
-          l10n.visualModeRealistic,
-          1,
-        ),
+      Icons.widgets_rounded,
+      l10n.visualModeRealistic,
+      1,
+      ),
     };
 
     return Material(
@@ -331,11 +412,11 @@ class _ModeToggleButton extends StatelessWidget {
         ),
       ),
     ).animate(target: target.toDouble()).scale(
-          duration: 300.ms,
-          curve: Curves.easeOutBack,
-          begin: const Offset(0.95, 0.95),
-          end: const Offset(1.0, 1.0),
-        );
+      duration: 300.ms,
+      curve: Curves.easeOutBack,
+      begin: const Offset(0.95, 0.95),
+      end: const Offset(1.0, 1.0),
+    );
   }
 }
 
@@ -402,29 +483,28 @@ class _GrowthSphereImage extends StatelessWidget {
                   final animatedGlowSize =
                       viewportSize * (0.68 + growthData.overallProgress * 0.24);
 
+                  final finalGlowAlpha = (glowOpacity * (0.4 + (t * 0.6))).clamp(0.0, 1.0);
+
                   return Stack(
                     alignment: Alignment.center,
                     children: [
                       Transform.translate(
                         offset: Offset(glowSlideX, 0),
-                        child: Opacity(
-                          opacity: 0.4 + (t * 0.6),
-                          child: Container(
-                            width: animatedGlowSize,
-                            height: animatedGlowSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD6DE)
-                                      .withValues(alpha: glowOpacity),
-                                  blurRadius:
-                                      28 + growthData.overallProgress * 18,
-                                  spreadRadius:
-                                      8 + growthData.overallProgress * 10,
-                                ),
-                              ],
-                            ),
+                        child: Container(
+                          width: animatedGlowSize,
+                          height: animatedGlowSize,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFFD6DE)
+                                    .withValues(alpha: finalGlowAlpha),
+                                blurRadius:
+                                28 + growthData.overallProgress * 18,
+                                spreadRadius:
+                                8 + growthData.overallProgress * 10,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -641,10 +721,10 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore>
   void initState() {
     super.initState();
     _pulseController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 6))
-          ..repeat(reverse: true);
+    AnimationController(vsync: this, duration: const Duration(seconds: 6))
+      ..repeat(reverse: true);
     final curve =
-        CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
+    CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
     _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(curve);
     _opacityAnimation = Tween<double>(begin: 0.5, end: 0.8).animate(curve);
   }
@@ -660,30 +740,28 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore>
     return AnimatedBuilder(
       animation: _pulseController,
       builder: (context, child) {
+        final currentOpacity = _opacityAnimation.value;
         return Transform.scale(
           scale: _scaleAnimation.value,
-          child: Opacity(
-            opacity: _opacityAnimation.value,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFFCE38A).withValues(alpha: 0.6),
-                    const Color(0xFF8E9BAE).withValues(alpha: 0.0),
-                  ],
-                  stops: const [0.2, 1.0],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFCE38A).withValues(alpha: 0.3),
-                    blurRadius: 60,
-                    spreadRadius: 10,
-                  ),
+          child: Container(
+            width: 280,
+            height: 280,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  const Color(0xFFFCE38A).withValues(alpha: 0.6 * currentOpacity),
+                  const Color(0xFF8E9BAE).withValues(alpha: 0.0),
                 ],
+                stops: const [0.2, 1.0],
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFCE38A).withValues(alpha: 0.3 * currentOpacity),
+                  blurRadius: 60,
+                  spreadRadius: 10,
+                ),
+              ],
             ),
           ),
         );
