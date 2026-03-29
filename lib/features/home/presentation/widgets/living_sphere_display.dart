@@ -260,7 +260,7 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
   }
 }
 
-/// Виджет для анимации развития клетки (stage0.1 - stage0.5)
+/// Виджет для анимации развития клетки (stage_0.1 - stage_0.5)
 class CellDevelopmentAnimation extends StatefulWidget {
   final double size;
 
@@ -315,8 +315,7 @@ class _CellDevelopmentAnimationState extends State<CellDevelopmentAnimation>
       child: RepaintBoundary(
         key: ValueKey<int>(_stage),
         child: OptimizedImage(
-          // ИСПРАВЛЕНО: Теперь 100% правильный путь через ДЕФИС
-          path: 'assets/images/fetal_growth/realistic/stage0.$_stage.png',
+          path: 'assets/images/fetal_growth/realistic/stage_0.$_stage.png',
           height: widget.size * 0.6,
           memCacheWidth: 800,
         ),
@@ -439,11 +438,23 @@ class _GrowthSphereImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final viewportSize = sphereSize * 0.62;
-    final normalizedScale =
-        0.88 + ((growthData.scale - 0.74) / 1.08).clamp(0.0, 1.0) * 0.36;
+
+    // --- НОВАЯ ЛОГИКА ДИНАМИЧЕСКОГО РОСТА ---
+
+    // 1. Высчитываем процент срока от 4 до 40 недели (значение от 0.0 до 1.0)
+    final double weekProgress = (week.clamp(4, 40) - 4) / 36.0;
+
+    // 2. Прогоняем через кривую Bezier для органичного, нелинейного роста
+    final double curveProgress = Curves.easeInOutCubic.transform(weekProgress);
+
+    // 3. Финальный масштаб: от 35% (малюсенький) на 4-й неделе до 115% (на всю сферу) на 40-й неделе
+    final double dynamicScale = 0.35 + (curveProgress * 0.80);
+
+    // Привязываем свечение и вращение к этой же кривой роста
+    final glowOpacity = 0.12 + (curveProgress * 0.20);
+    final rotation = -0.05 + (curveProgress * 0.1);
+
     final normalizedOffset = (growthData.yOffset / 14).clamp(-1.0, 1.0) * -8;
-    final glowOpacity = 0.12 + growthData.overallProgress * 0.16;
-    final rotation = -0.05 + growthData.weekProgress * 0.1;
     final direction = transitionDirection.toDouble();
 
     return SizedBox(
@@ -477,12 +488,13 @@ class _GrowthSphereImage extends StatelessWidget {
                   final imageSlideX = (1 - t) * 18 * direction;
                   final imageSlideY = normalizedOffset + (1 - t) * 10;
                   final glowSlideX = (1 - t) * -12 * direction;
-                  final animatedScale = normalizedScale * (0.88 + (t * 0.12));
-                  final animatedRotation =
-                      rotation + ((1 - t) * -0.08 * direction);
-                  final animatedGlowSize =
-                      viewportSize * (0.68 + growthData.overallProgress * 0.24);
 
+                  // Применяем динамический масштаб с легким эффектом появления
+                  final animatedScale = dynamicScale * (0.88 + (t * 0.12));
+                  final animatedRotation = rotation + ((1 - t) * -0.08 * direction);
+
+                  // Размер свечения плавно увеличивается вместе с малышом
+                  final animatedGlowSize = viewportSize * (0.50 + curveProgress * 0.40);
                   final finalGlowAlpha = (glowOpacity * (0.4 + (t * 0.6))).clamp(0.0, 1.0);
 
                   return Stack(
@@ -499,10 +511,8 @@ class _GrowthSphereImage extends StatelessWidget {
                               BoxShadow(
                                 color: const Color(0xFFFFD6DE)
                                     .withValues(alpha: finalGlowAlpha),
-                                blurRadius:
-                                28 + growthData.overallProgress * 18,
-                                spreadRadius:
-                                8 + growthData.overallProgress * 10,
+                                blurRadius: 28 + curveProgress * 18,
+                                spreadRadius: 8 + curveProgress * 10,
                               ),
                             ],
                           ),
