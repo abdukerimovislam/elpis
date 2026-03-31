@@ -6,7 +6,9 @@ import 'package:bloom_mama/features/pregnancy/data/pregnancy_repository.dart';
 import 'package:bloom_mama/features/pregnancy/domain/pregnancy_settings.dart';
 import 'package:bloom_mama/l10n/app_localizations.dart';
 
-final settingsStreamProvider = StreamProvider<PregnancySettings?>((ref) {
+// ИСПРАВЛЕНО: Добавлен autoDispose для предотвращения утечек памяти
+// И переименован провайдер во избежание конфликтов имен с другими экранами
+final themeSettingsProvider = StreamProvider.autoDispose<PregnancySettings?>((ref) {
   final repo = ref.watch(pregnancyRepositoryProvider);
   return repo.watchSettings();
 });
@@ -17,7 +19,9 @@ class ThemeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final settingsAsync = ref.watch(settingsStreamProvider);
+
+    // ИСПРАВЛЕНО: Используем локальный безопасный провайдер
+    final settingsAsync = ref.watch(themeSettingsProvider);
     final currentTheme = settingsAsync.value?.themeKey ?? 'serenity';
     final repo = ref.read(pregnancyRepositoryProvider);
 

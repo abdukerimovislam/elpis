@@ -46,7 +46,7 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
       setState(() {
         final duration = _stopwatch.elapsed;
         _elapsedTime =
-            '${duration.inMinutes.toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
+        '${duration.inMinutes.toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
       });
     });
   }
@@ -95,9 +95,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
 
     try {
       await ref.read(pregnancyRepositoryProvider).saveKickSession(
-            date: DateTime.now(),
-            kicks: _kicks,
-          );
+        date: DateTime.now(),
+        kicks: _kicks,
+      );
 
       if (!mounted) {
         return;
@@ -153,10 +153,10 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
             onPressed: _isSavingSession
                 ? null
                 : () {
-                    Navigator.pop(dialogContext);
-                    _startTimer();
-                    setState(() => _isActive = true);
-                  },
+              Navigator.pop(dialogContext);
+              _startTimer();
+              setState(() => _isActive = true);
+            },
             child: Text(
               l10n.commonCancel,
               style: TextStyle(color: mutedColor),
@@ -164,23 +164,23 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
           ),
           TextButton(
             onPressed:
-                _isSavingSession ? null : () => _saveSession(dialogContext),
+            _isSavingSession ? null : () => _saveSession(dialogContext),
             child: _isSavingSession
                 ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: primaryColor,
-                    ),
-                  )
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: primaryColor,
+              ),
+            )
                 : Text(
-                    l10n.commonSave,
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              l10n.commonSave,
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -225,10 +225,10 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
   }
 
   Widget _buildTimerTab(
-    BuildContext context,
-    Color primaryColor,
-    AppLocalizations l10n,
-  ) {
+      BuildContext context,
+      Color primaryColor,
+      AppLocalizations l10n,
+      ) {
     return Center(
       child: SizedBox(
         width: double.infinity,
@@ -261,9 +261,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
               onTap: _isActive
                   ? _addKick
                   : () {
-                      _resetSession(startImmediately: true);
-                      _addKick();
-                    },
+                _resetSession(startImmediately: true);
+                _addKick();
+              },
               child: Container(
                 width: 260,
                 height: 260,
@@ -287,9 +287,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
                       const Icon(Icons.touch_app, color: Colors.white, size: 80)
                           .animate(target: _kicks > 0 ? 1 : 0)
                           .scale(
-                            curve: Curves.elasticOut,
-                            duration: 300.ms,
-                          ),
+                        curve: Curves.elasticOut,
+                        duration: 300.ms,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         _isActive ? l10n.kickInstruction : l10n.kickBtnStart,
@@ -305,12 +305,12 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
               ),
             )
                 .animate(
-                    onPlay: (controller) => controller.repeat(reverse: true))
+                onPlay: (controller) => controller.repeat(reverse: true))
                 .scale(
-                  begin: const Offset(0.95, 0.95),
-                  end: const Offset(1.05, 1.05),
-                  duration: 2000.ms,
-                ),
+              begin: const Offset(0.95, 0.95),
+              end: const Offset(1.05, 1.05),
+              duration: 2000.ms,
+            ),
             const Spacer(),
             if (_isActive) ...[
               Text(
@@ -353,8 +353,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
                 padding: const EdgeInsets.only(bottom: 32),
                 child: TextButton(
                   onPressed: () => _finishSession(success: false),
+                  // ИСПРАВЛЕНО: Заменен хардкод на l10n
                   child: Text(
-                    'Finish Session',
+                    l10n.kickSessionDone,
                     style: TextStyle(color: primaryColor),
                   ),
                 ),
@@ -366,12 +367,12 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
   }
 
   Widget _buildHistoryTab(
-    BuildContext context,
-    Color primaryColor,
-    AppLocalizations l10n,
-  ) {
+      BuildContext context,
+      Color primaryColor,
+      AppLocalizations l10n,
+      ) {
     final historyStream =
-        ref.watch(pregnancyRepositoryProvider).watchKickHistory();
+    ref.watch(pregnancyRepositoryProvider).watchKickHistory();
 
     return StreamBuilder<List<HealthRecord>>(
       stream: historyStream,
@@ -449,8 +450,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
                           ),
                         ),
                         const SizedBox(height: 4),
+                        // ИСПРАВЛЕНО: Хардкод
                         Text(
-                          '$sessions sessions',
+                          '$sessions',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 12,
@@ -470,8 +472,9 @@ class _KickCounterSheetState extends ConsumerState<KickCounterSheet>
                           fontSize: 24,
                         ),
                       ),
+                      // ИСПРАВЛЕНО: Хардкод
                       Text(
-                        'kicks',
+                        l10n.kickTitle,
                         style: TextStyle(
                           color: primaryColor.withValues(alpha: 0.7),
                           fontSize: 10,

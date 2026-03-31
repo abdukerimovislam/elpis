@@ -21,7 +21,7 @@ final isarDatabaseProvider = FutureProvider<Isar>.internal(
 
 typedef IsarDatabaseRef = FutureProviderRef<Isar>;
 String _$pregnancyRepositoryHash() =>
-    r'967c34597fc651d134d15058ded0e77ba0cb9176';
+    r'92e7756aa6c8b906d2890e6d6976d1bf40f5ce54';
 
 /// See also [pregnancyRepository].
 @ProviderFor(pregnancyRepository)

@@ -6,7 +6,7 @@ part of 'bump_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$bumpRepositoryHash() => r'0ed70f72f10962ea7a35148fc965f815263a7b40';
+String _$bumpRepositoryHash() => r'8c50e31d442e226b974d033599d297b9852735a5';
 
 /// See also [bumpRepository].
 @ProviderFor(bumpRepository)

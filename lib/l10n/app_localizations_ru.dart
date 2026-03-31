@@ -13,14 +13,14 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String weekLabel(int week) {
-    return 'НЕДЕЛЯ $week';
+    return '$week НЕДЕЛЯ';
   }
 
   @override
-  String get menuHealth => 'Здоровье и тело';
+  String get menuHealth => 'Здоровье и Тело';
 
   @override
-  String get menuFamily => 'Семья и память';
+  String get menuFamily => 'Семья и Воспоминания';
 
   @override
   String get menuPrep => 'Подготовка';
@@ -40,7 +40,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get connectionPlaceholder => 'Напишите что-то вечное...';
+  String get connectionPlaceholder => 'Напишите что-нибудь сокровенное...';
 
   @override
   String get connectionSaveAction => 'Сохранить мысль';
@@ -49,28 +49,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get connectionOpenDiary => 'Открыть дневник';
 
   @override
-  String get onboardingTitle => 'Когда ожидается ваше чудо?';
+  String get onboardingTitle => 'Когда ждем чудо?';
 
   @override
-  String get onboardingSubtitle => 'Мы персонализируем путь для вас';
+  String get onboardingSubtitle => 'Мы персонализируем ваш путь';
 
   @override
   String get onboardingNameHint => 'Имя малыша (необязательно)';
 
   @override
-  String get onboardingAction => 'Начать путь';
+  String get onboardingAction => 'Начать';
 
   @override
   String get settingsTitle => 'Настройки';
 
   @override
-  String get settingsNameLabel => 'КАК МЫ НАЗЫВАЕМ МАЛЫША?';
+  String get settingsNameLabel => 'КАК МЫ НАЗОВЕМ МАЛЫША?';
 
   @override
-  String get settingsNameHint => 'Например, Оливер или Бусинка';
+  String get settingsNameHint => 'Например, Мия или Лев';
 
   @override
-  String get settingsDateLabel => 'ПРЕДПОЛАГАЕМАЯ ДАТА РОДОВ';
+  String get settingsDateLabel => 'ДАТА РОДОВ';
 
   @override
   String get settingsSave => 'Сохранить';
@@ -79,8 +79,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsDeleteData => 'Удалить все данные';
 
   @override
-  String get settingsDeleteDataConfirm =>
-      'Вы уверены? Это удалит все ваши фото, имена и историю. Приложение перезапустится.';
+  String get settingsDeleteDataConfirm => 'Вы уверены? Это удалит все ваши фото, имена и историю. Приложение будет перезапущено.';
 
   @override
   String get settingsPrivacy => 'Политика конфиденциальности';
@@ -89,7 +88,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loadingTitle => 'Загрузка...';
 
   @override
-  String get loadingBody => 'Получаем данные за эту неделю.';
+  String get loadingBody => 'Получаем данные для этой недели.';
 
   @override
   String weekDefault(Object week) {
@@ -97,11 +96,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get waterTitle => 'Гидратация';
+  String get waterTitle => 'Водный баланс';
 
   @override
-  String get waterFact =>
-      'Вода помогает обновлять околоплодные воды каждые 3 часа.';
+  String get waterFact => 'Вода помогает обновлять околоплодные воды каждые 3 часа.';
 
   @override
   String waterProgress(int goal) {
@@ -118,7 +116,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get visitSectionMain => 'ОСНОВНОЕ';
 
   @override
-  String get visitTitleHint => 'Название (например, УЗИ)';
+  String get visitTitleHint => 'Название (напр. УЗИ)';
 
   @override
   String get visitDoctor => 'Врач / Клиника';
@@ -127,8 +125,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get visitQuestions => 'ВАШИ ВОПРОСЫ';
 
   @override
-  String get visitQuestionsPlaceholder =>
-      'Что спросить у врача?\n- Можно ли летать?\n- Какие витамины принимать?';
+  String get visitQuestionsPlaceholder => 'Что спросить у врача?\n- Можно ли мне летать?\n- Какие витамины пить?';
 
   @override
   String get visitResults => 'РЕЗУЛЬТАТЫ';
@@ -137,13 +134,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get visitWeight => 'Вес (кг)';
 
   @override
-  String get visitBpSys => 'Сист.';
+  String get visitBpSys => 'Вверх';
 
   @override
-  String get visitBpDia => 'Диаст.';
+  String get visitBpDia => 'Вниз';
 
   @override
-  String get visitNotesHint => 'Заметки врача и назначения...';
+  String get visitNotesHint => 'Заметки и рецепты врача...';
 
   @override
   String get visitCalendar => 'Календарь визитов';
@@ -182,16 +179,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get toolSymptoms => 'Самочувствие';
 
   @override
-  String get toolSymptomsSub => 'Журнал симптомов';
+  String get toolSymptomsSub => 'Дневник симптомов';
 
   @override
   String get toolKegel => 'Кегель';
 
   @override
-  String get toolKegelSub => 'Тазовое дно';
+  String get toolKegelSub => 'Мышцы таза';
 
   @override
-  String get toolNames => 'Имена малыша';
+  String get toolNames => 'Имена';
 
   @override
   String get toolNamesSub => 'Выбирайте вместе';
@@ -212,19 +209,19 @@ class AppLocalizationsRu extends AppLocalizations {
   String get toolWater => 'Вода';
 
   @override
-  String get toolWaterSub => 'Гидратация';
+  String get toolWaterSub => 'Баланс';
 
   @override
   String get toolKicks => 'Шевеления';
 
   @override
-  String get toolKicksSub => 'Счётчик';
+  String get toolKicksSub => 'Счетчик';
 
   @override
   String get toolBag => 'Сумка в роддом';
 
   @override
-  String get toolBagSub => 'Чек-лист';
+  String get toolBagSub => 'Список вещей';
 
   @override
   String get toolVisits => 'Визиты';
@@ -233,10 +230,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get toolVisitsSub => 'План и заметки';
 
   @override
-  String get toolGallery => 'Галерея живота';
+  String get toolGallery => 'Животик';
 
   @override
-  String get toolGallerySub => 'Таймлапс живота';
+  String get toolGallerySub => 'История роста';
 
   @override
   String get symptomTitle => 'Как вы себя чувствуете?';
@@ -248,7 +245,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get symptomLabel => 'СИМПТОМЫ';
 
   @override
-  String get symptomSave => 'Сохранить';
+  String get symptomSave => 'Сохранить запись';
 
   @override
   String get symNausea => 'Тошнота';
@@ -275,7 +272,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get symHunger => 'Голод';
 
   @override
-  String get symBabyActive => 'Малыш активный';
+  String get symBabyActive => 'Малыш активен';
 
   @override
   String get symAnxiety => 'Тревожность';
@@ -284,36 +281,35 @@ class AppLocalizationsRu extends AppLocalizations {
   String get kickTitle => 'СЕАНС СВЯЗИ';
 
   @override
-  String get kickInstruction => 'Нажимайте при\nшевелении';
+  String get kickInstruction => 'Нажмите при\nдвижении';
 
   @override
   String kickCount(int count) {
-    return 'Шевеления: $count';
+    return 'Движений: $count';
   }
 
   @override
   String get kickGoal => 'Цель: 10 шевелений';
 
   @override
-  String get kickSessionDone => 'Сеанс завершён';
+  String get kickSessionDone => 'Сеанс завершен';
 
   @override
-  String get kickDialogTitle => 'Отлично!';
+  String get kickDialogTitle => 'Отличная работа!';
 
   @override
   String kickDialogBody(int count, String time) {
-    return 'Вы отметили $count шевелений за $time.';
+    return 'Вы насчитали $count шевелений за $time.';
   }
 
   @override
-  String get kegelTitle => 'Тренировка Кегеля';
+  String get kegelTitle => 'Упражнения Кегеля';
 
   @override
-  String get kegelSubtitle =>
-      'Укрепление мышц тазового дна подготавливает тело к родам.';
+  String get kegelSubtitle => 'Укрепление мышц тазового дна подготавливает тело к родам.';
 
   @override
-  String get kegelPhaseSqueeze => 'НАПРЯЖЕНИЕ';
+  String get kegelPhaseSqueeze => 'СЖАТИЕ';
 
   @override
   String get kegelPhaseSqueezeInstr => 'Напрягите мышцы';
@@ -345,7 +341,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contractionTitle => 'Схватки';
 
   @override
-  String get contractionInstruction => 'Нажмите кнопку в начале схватки';
+  String get contractionInstruction => 'Нажмите кнопку, когда начнется схватка';
 
   @override
   String get contractionRelax => 'Отдыхайте и глубоко дышите';
@@ -382,7 +378,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String checklistProgress(int percent) {
-    return 'Собрано $percent%';
+    return 'Собрано на $percent%';
   }
 
   @override
@@ -401,13 +397,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get checkDocPassport => 'Паспорт / ID';
 
   @override
-  String get checkDocRecords => 'Обменная карта / записи';
+  String get checkDocRecords => 'Обменная карта';
 
   @override
-  String get checkDocInsurance => 'Страховка';
+  String get checkDocInsurance => 'Полис ОМС / СНИЛС';
 
   @override
-  String get checkDocContract => 'Договор с роддомом';
+  String get checkDocContract => 'Контракт на роды (если есть)';
 
   @override
   String get checkDocTests => 'Свежие анализы';
@@ -416,22 +412,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get checkMomSlippers => 'Моющиеся тапочки';
 
   @override
-  String get checkMomWater => 'Вода (2 бутылки)';
+  String get checkMomWater => 'Вода без газа (2-3 бутылки)';
 
   @override
-  String get checkMomSocks => 'Тёплые носки / компрессионные';
+  String get checkMomSocks => 'Теплые носки / Компрессионные';
 
   @override
   String get checkMomLipBalm => 'Бальзам для губ';
 
   @override
-  String get checkMomCharger => 'Телефон и длинный зарядный кабель';
+  String get checkMomCharger => 'Телефон и длинная зарядка';
 
   @override
   String get checkMomPads => 'Послеродовые прокладки';
 
   @override
-  String get checkMomUnderwear => 'Одноразовое бельё';
+  String get checkMomUnderwear => 'Одноразовые трусики';
 
   @override
   String get checkMomBra => 'Бюстгальтер для кормления';
@@ -440,7 +436,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get checkMomCream => 'Крем для сосков';
 
   @override
-  String get checkMomHygiene => 'Гигиена (щётка, мыло)';
+  String get checkMomHygiene => 'Средства гигиены (зуб. паста, мыло)';
 
   @override
   String get checkBabyDiapers => 'Подгузники (Newborn)';
@@ -452,13 +448,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get checkBabyCream => 'Крем под подгузник';
 
   @override
-  String get checkBabyClothes => 'Боди / слипы (3–4)';
+  String get checkBabyClothes => 'Слипы / Боди (3-4 шт)';
 
   @override
   String get checkBabyHat => 'Шапочка и носочки';
 
   @override
-  String get checkBabyOutfit => 'Комплект на выписку';
+  String get checkBabyOutfit => 'Одежда на выписку';
 
   @override
   String get weightTitle => 'Контроль веса';
@@ -469,11 +465,10 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get weightInputHint => 'Введите вес, чтобы получить анализ';
+  String get weightInputHint => 'Введите вес для анализа';
 
   @override
-  String get weightNoParams =>
-      'Укажите «Вес до беременности» в настройках для умного анализа';
+  String get weightNoParams => 'Укажите \'Вес до беременности\' в настройках для умного анализа';
 
   @override
   String get weightUnit => 'кг';
@@ -482,15 +477,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get weightSave => 'Сохранить вес';
 
   @override
-  String get weightFeedbackLow =>
-      'Набор веса немного ниже среднего. Помните о сбалансированном питании.';
+  String get weightFeedbackLow => 'Набор веса чуть ниже нормы. Не забывайте про сложные углеводы.';
 
   @override
-  String get weightFeedbackHigh =>
-      'Набор веса немного выше среднего. Сосредоточьтесь на полезной еде и воде.';
+  String get weightFeedbackHigh => 'Набор веса чуть выше нормы. Постарайтесь пить больше воды.';
 
   @override
-  String get weightFeedbackNormal => 'Отлично! Набор веса идёт идеально.';
+  String get weightFeedbackNormal => 'Идеальный темп! Ваше тело работает как часы.';
 
   @override
   String get nameTitle => 'Настройки поиска';
@@ -523,11 +516,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get nameEmptyTitle => 'Имена не найдены';
 
   @override
-  String get nameEmptyBody =>
-      'Попробуйте изменить фильтры\nили выбрать другие страны';
+  String get nameEmptyBody => 'Попробуйте изменить фильтры\nили выбрать другие страны';
 
   @override
-  String get nameEmptyAction => 'Настроить фильтры';
+  String get nameEmptyAction => 'Изменить фильтры';
 
   @override
   String get nameFavEmpty => 'Список избранного пуст';
@@ -584,7 +576,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get countryMA => '🇲🇦 Марокканские';
 
   @override
-  String get countryNL => '🇳🇱 Нидерландские';
+  String get countryNL => '🇳🇱 Голландские';
 
   @override
   String get countryCZ => '🇨🇿 Чешские';
@@ -626,7 +618,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get countryAU => '🇦🇺 Австралийские';
 
   @override
-  String get galleryTitle => 'Галерея живота';
+  String get galleryTitle => 'Фото животика';
 
   @override
   String get gallerySubtitle => 'Сохраняйте воспоминания каждую неделю';
@@ -649,7 +641,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get galleryDeleteBody => 'Это действие нельзя отменить.';
 
   @override
-  String get onboardingModeLmp => 'Рассчитать по месячным';
+  String get onboardingModeLmp => 'По дате последней менструации';
 
   @override
   String get onboardingModeEdd => 'Я знаю дату родов';
@@ -662,12 +654,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String onboardingCalculatedDate(String date) {
-    return 'Расчётная дата родов: $date';
+    return 'Примерная дата: $date';
   }
 
   @override
   String homeReturnToCurrent(int week) {
-    return 'Вернуться к неделе $week';
+    return 'Вернуться к $week неделе';
   }
 
   @override
@@ -686,22 +678,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get weightLabel => 'ВЕС';
 
   @override
-  String get lengthLabel => 'ДЛИНА';
+  String get lengthLabel => 'РОСТ';
 
   @override
-  String get mode => 'Режим визуализации';
+  String get mode => 'Визуальный режим';
 
   @override
   String get fruit => 'Фрукты';
 
   @override
-  String get realistic => 'Реалистичный';
+  String get realistic => 'Реализм';
 
   @override
   String get labelWeight => 'ВЕС';
 
   @override
-  String get labelLength => 'ДЛИНА';
+  String get labelLength => 'РОСТ';
 
   @override
   String get errorNoImage => 'Нет изображения';
@@ -739,35 +731,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get toolIsItNormalSub => 'Проверка симптомов';
 
   @override
-  String get normalDisclaimer =>
-      'Этот справочник носит ознакомительный характер. Всегда обращайтесь к врачу за профессиональным советом.';
+  String get normalDisclaimer => 'Это руководство носит исключительно справочный характер. Всегда консультируйтесь с вашим врачом.';
 
   @override
-  String get normalSearchHint => 'Поиск симптомов (например, Головная боль)';
+  String get normalSearchHint => 'Поиск симптомов (напр. Головная боль)';
 
   @override
-  String get statusCommon => 'Часто';
+  String get statusCommon => 'Норма';
 
   @override
   String get statusMonitor => 'Наблюдать';
 
   @override
-  String get statusUrgent => 'Звонить врачу';
+  String get statusUrgent => 'К врачу';
 
   @override
   String get actionContactDoctor => 'СВЯЗАТЬСЯ С ВРАЧОМ';
 
   @override
-  String get toolReport => 'Отчёт для врача';
+  String get toolReport => 'Отчет врачу';
 
   @override
   String get toolReportSub => 'Экспорт в PDF';
 
   @override
-  String get settingsExportPdf => 'Экспорт отчёта (PDF)';
+  String get settingsExportPdf => 'Экспорт отчета (PDF)';
 
   @override
-  String get exporting => 'Создаём PDF...';
+  String get exporting => 'Создание PDF...';
 
   @override
   String get kickTabTimer => 'Таймер';
@@ -779,17 +770,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get kickBtnStart => 'Начать сеанс';
 
   @override
-  String get kickHistoryEmpty => 'Пока нет истории';
+  String get kickHistoryEmpty => 'История пока пуста';
 
   @override
   String get weightChartTitle => 'График прогресса';
 
   @override
-  String get weightHistoryTitle => 'Последние записи';
+  String get weightHistoryTitle => 'Недавняя история';
 
   @override
-  String get weightChartEmpty =>
-      'Добавьте минимум 2 записи, чтобы увидеть график';
+  String get weightChartEmpty => 'Добавьте минимум 2 записи, чтобы увидеть график';
 
   @override
   String get settingsThemeTitle => 'ТЕМА';
@@ -804,13 +794,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsThemeWarmth => 'Тепло';
 
   @override
-  String get settingsModeTitle => 'Режим визуализации';
+  String get settingsModeTitle => 'ВИЗУАЛЬНЫЙ РЕЖИМ';
 
   @override
   String get settingsModeFruit => 'Фрукты';
 
   @override
-  String get settingsModeRealistic => 'Реалистичный';
+  String get settingsModeRealistic => 'Реализм';
 
   @override
   String get contractionBreathIn => 'Вдох...';
@@ -819,10 +809,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get contractionBreathOut => 'Выдох...';
 
   @override
-  String get contractionAlertTitle => 'Пора ехать в роддом?';
+  String get contractionAlertTitle => 'Пора в роддом?';
 
   @override
-  String get contractionAlertMessage => 'Правило 5-1-1 выполнено!';
+  String get contractionAlertMessage => 'Сработало правило (5-1-1)! Время собираться.';
 
   @override
   String get contractionTapToStop => 'Нажмите на круг, чтобы остановить';
@@ -831,10 +821,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get kegelSettingsTitle => 'Настройки тренировки';
 
   @override
-  String get kegelSettingWork => 'Напряжение (сек)';
+  String get kegelSettingWork => 'Сжатие (сек)';
 
   @override
-  String get kegelSettingRest => 'Расслабление (сек)';
+  String get kegelSettingRest => 'Отдых (сек)';
 
   @override
   String get kegelSettingReps => 'Повторения';
@@ -843,10 +833,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get kegelPaused => 'Пауза';
 
   @override
-  String get pdfReportTitle => 'Отчёт Bloom Mama';
+  String get pdfReportTitle => 'Отчет Bloom Mama';
 
   @override
-  String get generatedDate => 'Сформировано';
+  String get generatedDate => 'Сформирован';
 
   @override
   String get dateLabel => 'Дата';
@@ -867,31 +857,28 @@ class AppLocalizationsRu extends AppLocalizations {
   String get symptomsTitle => 'Недавние симптомы';
 
   @override
-  String get pdfDisclaimer =>
-      'Отказ от ответственности: этот отчёт предназначен только для отслеживания. Обратитесь к врачу.';
+  String get pdfDisclaimer => 'Отказ от ответственности: Этот отчет предназначен только для отслеживания. Проконсультируйтесь с врачом.';
 
   @override
   String get diaryTitle => 'Дорогой малыш...';
 
   @override
-  String get diarySubtitle => 'Ваши письма и мысли';
+  String get diarySubtitle => 'Ваши мысли и письма';
 
   @override
-  String get diaryEmpty =>
-      'Вы пока не написали ни одной заметки. Нажмите на карточку недели, чтобы написать письмо.';
+  String get diaryEmpty => 'Вы еще ничего не написали. Нажмите на карточку недели, чтобы написать письмо.';
 
   @override
-  String get settingsLegalTitle => 'ЮРИДИЧЕСКОЕ И ИНФО';
+  String get settingsLegalTitle => 'ИНФОРМАЦИЯ И ПРАВА';
 
   @override
-  String get settingsDisclaimer => 'Медицинский дисклеймер';
+  String get settingsDisclaimer => 'Медицинский отказ';
 
   @override
-  String get disclaimerTitle => 'Медицинский дисклеймер';
+  String get disclaimerTitle => 'Медицинский отказ';
 
   @override
-  String get disclaimerBody =>
-      'Это приложение предназначено только для информационных целей и не заменяет профессиональную медицинскую консультацию, диагностику или лечение. \n\nВсегда обращайтесь за советом к врачу или другому квалифицированному специалисту по любым вопросам, связанным со здоровьем. \n\nНикогда не игнорируйте профессиональный медицинский совет и не откладывайте обращение к врачу из-за информации, прочитанной в этом приложении.';
+  String get disclaimerBody => 'Это приложение предназначено исключительно для информационных целей и не заменяет профессиональную медицинскую консультацию, диагностику или лечение. \n\nВсегда обращайтесь за советом к своему врачу по любым вопросам, касающимся вашего здоровья. \n\nНикогда не пренебрегайте медицинскими советами и не откладывайте обращение к врачу из-за информации, прочитанной в этом приложении.';
 
   @override
   String get commonUnderstood => 'Понятно';
@@ -921,13 +908,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get themeWarmth => 'Тепло';
 
   @override
-  String get settingsVisualMode => 'РЕЖИМ ВИЗУАЛИЗАЦИИ';
+  String get settingsVisualMode => 'ВИЗУАЛЬНЫЙ РЕЖИМ';
 
   @override
   String get visualModeFruit => 'Фрукты';
 
   @override
-  String get visualModeRealistic => 'Реалистичный';
+  String get visualModeRealistic => 'Реализм';
 
   @override
   String get exportingPdf => 'Экспорт...';
@@ -936,24 +923,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get laborModeTitle => 'РЕЖИМ РОДОВ';
 
   @override
-  String get laborTriggerButton => 'У МЕНЯ СХВАТКИ';
+  String get laborTriggerButton => 'РОДЫ НАЧАЛИСЬ';
 
   @override
-  String get laborMotivationalQuote => 'Ты справишься, мама! 💪';
+  String get laborMotivationalQuote => 'У тебя все получится, Мама! 💪';
 
   @override
-  String get laborConfirmTitle => 'Малыш уже идёт?';
+  String get laborConfirmTitle => 'Малыш уже в пути?';
 
   @override
-  String get laborConfirmBody =>
-      'Это включит Режим родов. Мы скроем всё, кроме главного: Таймера схваток и Чек-листа в роддом.';
+  String get laborConfirmBody => 'Приложение перейдет в Режим родов. Мы скроем все лишнее и оставим только самое необходимое: Таймер схваток и Список в роддом.';
 
   @override
-  String get laborConfirmPartnerPhone => 'Номер партнёра';
+  String get laborConfirmPartnerPhone => 'Номер телефона партнера';
 
   @override
-  String get laborConfirmNotifySwitch =>
-      'Уведомить партнёра через WhatsApp/SMS';
+  String get laborConfirmNotifySwitch => 'Сообщить партнеру по WhatsApp/SMS';
 
   @override
   String get laborConfirmStartBtn => 'ДА, ВКЛЮЧИТЬ РЕЖИМ РОДОВ';
@@ -965,24 +950,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get laborExitTitle => 'Завершить Режим родов?';
 
   @override
-  String get laborExitBody =>
-      'Поздравляем, если малыш уже здесь! Или это была ложная тревога?';
+  String get laborExitBody => 'Поздравляем, если малыш уже здесь! Или это была ложная тревога?';
 
   @override
-  String get laborExitEndBtn => 'ЗАВЕРШИТЬ';
+  String get laborExitEndBtn => 'ЗАВЕРШИТЬ РЕЖИМ';
 
   @override
-  String get laborEmergencyPrepTitle => 'ЭКСТРЕННЫЕ ДАННЫЕ';
+  String get laborEmergencyPrepTitle => 'ПОДГОТОВКА';
 
   @override
-  String get laborEmergencyPrepSubtitle =>
-      'Заполните сейчас, чтобы сэкономить время во время схваток.';
+  String get laborEmergencyPrepSubtitle => 'Заполните это сейчас, чтобы сэкономить время во время схваток.';
 
   @override
-  String get laborPartnerName => 'Имя партнёра';
+  String get laborPartnerName => 'Имя партнера';
 
   @override
-  String get laborPartnerPhone => 'Телефон партнёра';
+  String get laborPartnerPhone => 'Телефон партнера';
 
   @override
   String get laborDoctorPhone => 'Телефон врача';
@@ -991,10 +974,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get laborHospitalAddress => 'Адрес роддома';
 
   @override
-  String get laborHospitalBtn => 'РОДДОМ';
+  String get laborHospitalBtn => 'В РОДДОМ';
 
   @override
-  String get laborDoctorBtn => 'ВРАЧ';
+  String get laborDoctorBtn => 'ВРАЧУ';
 
   @override
   String get laborTimerContraction => 'СХВАТКА';
@@ -1012,7 +995,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get laborTimerReady => 'Готовы к первой схватке';
 
   @override
-  String get laborTimerMonitoring => 'Отслеживаем...';
+  String get laborTimerMonitoring => 'Отслеживание...';
 
   @override
   String get laborTimerLastDuration => 'ПОСЛЕДНЯЯ ДЛИТЕЛЬНОСТЬ';
@@ -1022,20 +1005,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String laborHelpMessage(String name) {
-    return '🚨 $name, ПОРА! \n\nСхватки начались. Я включаю Режим родов в приложении. Пожалуйста, приготовься! ❤️';
+    return '🚨 $name, ПОРА! \n\nНачались схватки. Я включаю Режим родов в приложении. Пожалуйста, будь готов! ❤️';
   }
 
   @override
-  String get errorNoHospitalAddress => 'В настройках не указан адрес роддома';
+  String get errorNoHospitalAddress => 'Адрес роддома не указан в настройках';
 
   @override
-  String get errorNoDoctorPhone => 'В настройках не указан телефон врача';
+  String get errorNoDoctorPhone => 'Телефон врача не указан в настройках';
 
   @override
-  String get commonMinutes => 'мин';
+  String get commonMinutes => 'min';
 
   @override
-  String get commonSeconds => 'сек';
+  String get commonSeconds => 'sec';
 
   @override
   String get commonNext => 'ДАЛЕЕ';
@@ -1045,4 +1028,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get jumpToWeek => 'ПЕРЕЙТИ К НЕДЕЛЕ';
+
+  @override
+  String get growthSectionTitle => 'Как развивается малыш';
+
+  @override
+  String get growthSectionSubtitle => 'Плавный рост по неделям беременности';
+
+  @override
+  String growthStage(int stage) {
+    return 'Этап $stage';
+  }
 }

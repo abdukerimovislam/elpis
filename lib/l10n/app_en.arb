@@ -441,5 +441,15 @@
   "commonSeconds": "sec",
   "commonNext": "NEXT",
   "onboardingNameTitle": "How should we call you?",
-  "jumpToWeek": "JUMP TO WEEK"
+  "jumpToWeek": "JUMP TO WEEK",
+  "growthSectionTitle": "How Baby Is Growing",
+    "growthSectionSubtitle": "A smooth visual growth journey through pregnancy",
+    "growthStage": "Stage {stage}",
+    "@growthStage": {
+      "placeholders": {
+        "stage": {
+          "type": "int"
+        }
+      }
+    }
 }

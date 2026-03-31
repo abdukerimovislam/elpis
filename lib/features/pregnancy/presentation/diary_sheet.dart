@@ -8,12 +8,10 @@ import '../../pregnancy/data/pregnancy_repository.dart';
 import '../../pregnancy/data/insight_repository.dart';
 import '../../pregnancy/domain/pregnancy_settings.dart';
 
-// 1. Провайдер истории (Теперь STREAM для реактивности)
 final diaryHistoryProvider = StreamProvider.autoDispose((ref) {
   return ref.watch(pregnancyRepositoryProvider).watchDiaryHistory();
 });
 
-// 2. Провайдер настроек
 final settingsStreamProvider = StreamProvider.autoDispose((ref) {
   return ref.watch(pregnancyRepositoryProvider).watchSettings();
 });
@@ -35,6 +33,9 @@ class DiarySheet extends ConsumerWidget {
     final historyAsync = ref.watch(diaryHistoryProvider);
     final settingsAsync = ref.watch(settingsStreamProvider);
 
+    // ИСПРАВЛЕНО: Вынесли watch наружу, чтобы избежать чтения провайдера внутри билдера списка
+    final insightRepo = ref.watch(insightRepositoryProvider);
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
@@ -44,7 +45,6 @@ class DiarySheet extends ConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 16),
-          // Drag Handle
           Container(
             width: 40,
             height: 4,
@@ -55,7 +55,6 @@ class DiarySheet extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Заголовок
           Text(l10n.diaryTitle,
               style: theme.textTheme.displayLarge?.copyWith(fontSize: 24)),
           const SizedBox(height: 8),
@@ -100,15 +99,14 @@ class DiarySheet extends ConsumerWidget {
 
                 return ListView.separated(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   itemCount: history.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final item = history[index];
 
-                    final objectData = ref
-                        .read(insightRepositoryProvider)
-                        .getObjectData(item.week, languageCode, visualModeKey);
+                    // Теперь данные берутся из безопасно прочитанного репозитория
+                    final objectData = insightRepo.getObjectData(item.week, languageCode, visualModeKey);
                     final objectTitle = objectData.title;
 
                     return Container(
@@ -146,7 +144,7 @@ class DiarySheet extends ConsumerWidget {
                                 item.date == null
                                     ? '-'
                                     : DateFormat.yMMMd(locale)
-                                        .format(item.date!),
+                                    .format(item.date!),
                                 style: theme.textTheme.labelSmall
                                     ?.copyWith(fontSize: 12),
                               ),

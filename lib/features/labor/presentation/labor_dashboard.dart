@@ -12,9 +12,9 @@ class LaborDashboard extends ConsumerWidget {
   const LaborDashboard({super.key});
 
   Future<void> _openHospital(
-    BuildContext context,
-    PregnancySettings? settings,
-  ) async {
+      BuildContext context,
+      PregnancySettings? settings,
+      ) async {
     final l10n = AppLocalizations.of(context)!;
 
     if (settings?.hospitalAddress == null ||
@@ -26,6 +26,7 @@ class LaborDashboard extends ConsumerWidget {
     }
 
     final query = Uri.encodeComponent(settings.hospitalAddress!);
+    // ИСПРАВЛЕНО: Официальный API URL для Google Maps
     final mapUrl = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$query',
     );
@@ -51,9 +52,9 @@ class LaborDashboard extends ConsumerWidget {
   }
 
   Future<void> _callDoctor(
-    BuildContext context,
-    PregnancySettings? settings,
-  ) async {
+      BuildContext context,
+      PregnancySettings? settings,
+      ) async {
     final l10n = AppLocalizations.of(context)!;
 
     if (settings?.doctorPhone == null || settings!.doctorPhone!.isEmpty) {
@@ -109,44 +110,44 @@ class LaborDashboard extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed:
-                      isEnding ? null : () => Navigator.pop(dialogContext),
+                  isEnding ? null : () => Navigator.pop(dialogContext),
                   child: Text(l10n.commonCancel),
                 ),
                 TextButton(
                   onPressed: isEnding
                       ? null
                       : () async {
-                          setState(() => isEnding = true);
-                          try {
-                            await ref
-                                .read(laborModeProvider.notifier)
-                                .toggleLaborMode(false);
-                            if (dialogContext.mounted) {
-                              Navigator.pop(dialogContext);
-                            }
-                          } catch (_) {
-                            if (!dialogContext.mounted) {
-                              return;
-                            }
-                            Navigator.pop(dialogContext);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l10n.errorGeneric)),
-                            );
-                          }
-                        },
+                    setState(() => isEnding = true);
+                    try {
+                      await ref
+                          .read(laborModeProvider.notifier)
+                          .toggleLaborMode(false);
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    } catch (_) {
+                      if (!dialogContext.mounted) {
+                        return;
+                      }
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.errorGeneric)),
+                      );
+                    }
+                  },
                   child: isEnding
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                       : Text(
-                          l10n.laborExitEndBtn,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
+                    l10n.laborExitEndBtn,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -159,7 +160,7 @@ class LaborDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsStream =
-        ref.watch(pregnancyRepositoryProvider).watchSettings();
+    ref.watch(pregnancyRepositoryProvider).watchSettings();
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(

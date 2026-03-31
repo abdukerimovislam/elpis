@@ -19,11 +19,14 @@ class BumpGallerySheet extends ConsumerWidget {
   }
 
   Future<void> _savePhoto(
-    BuildContext context,
-    WidgetRef ref,
-    int week,
-    String path,
-  ) async {
+      BuildContext context,
+      WidgetRef ref,
+      int week,
+      String path,
+      ) async {
+    // ИСПРАВЛЕНО: Захватываем навигатор ДО асинхронного разрыва (защита от зависания лоадера)
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -37,12 +40,8 @@ class BumpGallerySheet extends ConsumerWidget {
         _showError(context);
       }
     } finally {
-      if (context.mounted) {
-        final navigator = Navigator.of(context, rootNavigator: true);
-        if (navigator.mounted) {
-          navigator.pop();
-        }
-      }
+      // ИСПРАВЛЕНО: Безопасное закрытие диалога
+      rootNavigator.pop();
     }
   }
 
@@ -96,7 +95,7 @@ class BumpGallerySheet extends ConsumerWidget {
 
                 return GridView.builder(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.85,
@@ -119,16 +118,19 @@ class BumpGallerySheet extends ConsumerWidget {
   }
 
   Widget _buildPhotoCard(
-    BuildContext context,
-    WidgetRef ref,
-    int week,
-    BumpSnapshot? photo,
-    AppLocalizations l10n,
-  ) {
+      BuildContext context,
+      WidgetRef ref,
+      int week,
+      BumpSnapshot? photo,
+      AppLocalizations l10n,
+      ) {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
     final isTaken = photo != null;
+
+    // ИСПРАВЛЕНО: Безопасная проверка пути к файлу
+    final hasValidFile = isTaken && photo.tempFullFilePath != null && photo.tempFullFilePath!.isNotEmpty;
 
     return GestureDetector(
       onTap: () => _pickImage(context, ref, week),
@@ -147,68 +149,68 @@ class BumpGallerySheet extends ConsumerWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: isTaken
+        child: hasValidFile
             ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(
-                    File(photo.tempFullFilePath ?? ''),
-                    fit: BoxFit.cover,
-                    cacheWidth: 400,
-                    errorBuilder: (ctx, err, stack) => Container(
-                      color: theme.hoverColor,
-                      child:
-                          Icon(Icons.broken_image_outlined, color: mutedColor),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.7),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: Text(
-                        l10n.galleryWeek(week),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_a_photo_outlined,
-                    color: primaryColor.withValues(alpha: 0.5),
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.galleryWeek(week),
-                    style: TextStyle(
-                      color: mutedColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+          fit: StackFit.expand,
+          children: [
+            Image.file(
+              File(photo.tempFullFilePath!),
+              fit: BoxFit.cover,
+              cacheWidth: 400,
+              errorBuilder: (ctx, err, stack) => Container(
+                color: theme.hoverColor,
+                child:
+                Icon(Icons.broken_image_outlined, color: mutedColor),
               ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+                child: Text(
+                  l10n.galleryWeek(week),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        )
+            : Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_a_photo_outlined,
+              color: primaryColor.withValues(alpha: 0.5),
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.galleryWeek(week),
+              style: TextStyle(
+                color: mutedColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -275,13 +277,13 @@ class BumpGallerySheet extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(l10n.galleryDeleteTitle),
             content: Text(l10n.galleryDeleteBody),
             actions: [
               TextButton(
                 onPressed:
-                    isDeleting ? null : () => Navigator.pop(dialogContext),
+                isDeleting ? null : () => Navigator.pop(dialogContext),
                 child: Text(
                   l10n.commonCancel,
                   style: const TextStyle(color: Colors.grey),
@@ -291,36 +293,36 @@ class BumpGallerySheet extends ConsumerWidget {
                 onPressed: isDeleting
                     ? null
                     : () async {
-                        setState(() => isDeleting = true);
-                        try {
-                          await ref
-                              .read(bumpRepositoryProvider)
-                              .deletePhoto(photo.id);
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
-                        } catch (_) {
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext);
-                          }
-                          if (context.mounted) {
-                            _showError(context);
-                          }
-                        }
-                      },
+                  setState(() => isDeleting = true);
+                  try {
+                    await ref
+                        .read(bumpRepositoryProvider)
+                        .deletePhoto(photo.id);
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                  } catch (_) {
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
+                    if (context.mounted) {
+                      _showError(context);
+                    }
+                  }
+                },
                 child: isDeleting
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
                     : Text(
-                        l10n.commonDelete,
-                        style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                  l10n.commonDelete,
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),

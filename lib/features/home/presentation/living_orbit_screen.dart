@@ -20,12 +20,14 @@ import 'celestial_dial.dart';
 import 'widgets/living_sphere_display.dart';
 import 'widgets/orbit_navigation_ui.dart';
 
-// --- Ð˜ÐœÐŸÐžÐ Ð¢Ð« Ð”Ð›Ð¯ Ð›ÐžÐ“Ð˜ÐšÐ˜ Ð ÐžÐ”ÐžÐ’ ---
 import '../../labor/presentation/labor_trigger_button.dart';
 import '../../labor/presentation/labor_confirm_sheet.dart';
-
-// --- Ð˜ÐœÐŸÐžÐ Ð¢ Ð”Ð›Ð¯ Ð’Ð«Ð‘ÐžÐ Ð ÐÐ•Ð”Ð•Ð›Ð˜ ---
 import 'widgets/week_picker_sheet.dart';
+
+// ИСПРАВЛЕНИЕ ОШИБКИ 1: Создаем локальный StreamProvider для экрана
+final orbitSettingsProvider = StreamProvider.autoDispose<PregnancySettings?>((ref) {
+  return ref.watch(pregnancyRepositoryProvider).watchSettings();
+});
 
 class LivingOrbitScreen extends ConsumerStatefulWidget {
   const LivingOrbitScreen({super.key});
@@ -42,7 +44,6 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
   int? _overrideWeek;
   int? _lastLoadedLetterWeek;
   int _lastHapticState = 0;
-  DateTime? _cachedDueDate;
 
   String _visualModeKey = PregnancySettings.visualModeFruit;
   bool _isSavingLetter = false;
@@ -91,7 +92,6 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     super.dispose();
   }
 
-  // ÐœÐµÑ‚Ð¾Ð´ Ð´Ð»Ñ Ð·Ð°ÐºÑ€Ñ‹Ñ‚Ð¸Ñ Ð¸Ð½Ñ„Ð¾Ñ€Ð¼Ð°Ñ†Ð¸Ð¾Ð½Ð½Ñ‹Ñ… ÑÐ»Ð¾ÐµÐ² (Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚ Ðº ÑÑ„ÐµÑ€Ðµ)
   void _resetView() {
     FocusScope.of(context).unfocus();
     _depthController.animateTo(0.0,
@@ -115,6 +115,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     setState(() {
       _overrideWeek = safeWeek == realWeek ? null : safeWeek;
     });
+    _loadLetter(safeWeek);
   }
 
   void _handleSphereSwipe(
@@ -138,33 +139,28 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
 
   void _showErrorSnack(String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) {
-      return;
-    }
-
+    if (messenger == null) return;
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _loadLetter(int week) async {
+    if (_lastLoadedLetterWeek == week) return;
     _lastLoadedLetterWeek = week;
 
     try {
       final snapshot =
-          await ref.read(pregnancyRepositoryProvider).getOrCreateSnapshot(week);
-      if (!mounted || _lastLoadedLetterWeek != week) {
-        return;
-      }
+      await ref.read(pregnancyRepositoryProvider).getOrCreateSnapshot(week);
+      if (!mounted || _lastLoadedLetterWeek != week) return;
 
       final letter = snapshot.letterToBaby ?? "";
-      _loadedLetterText = letter;
-      _letterController.text = letter;
+      setState(() {
+        _loadedLetterText = letter;
+        _letterController.text = letter;
+      });
     } catch (_) {
-      if (!mounted || _lastLoadedLetterWeek != week) {
-        return;
-      }
-
+      if (!mounted || _lastLoadedLetterWeek != week) return;
       _showErrorSnack(
         AppLocalizations.of(context)?.errorGeneric ??
             "Something went wrong. Please try again.",
@@ -174,13 +170,9 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
 
   Future<void> _saveLetter(int week) async {
     final text = _letterController.text;
-    if (_isSavingLetter || text == _loadedLetterText) {
-      return;
-    }
+    if (_isSavingLetter || text == _loadedLetterText) return;
 
-    setState(() {
-      _isSavingLetter = true;
-    });
+    setState(() => _isSavingLetter = true);
 
     try {
       await ref.read(pregnancyRepositoryProvider).saveLetter(week, text);
@@ -194,17 +186,13 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isSavingLetter = false;
-        });
+        setState(() => _isSavingLetter = false);
       }
     }
   }
 
   Future<void> _toggleVisualMode() async {
-    if (_isTogglingVisualMode) {
-      return;
-    }
+    if (_isTogglingVisualMode) return;
 
     HapticFeedback.selectionClick();
     final repo = ref.read(pregnancyRepositoryProvider);
@@ -215,7 +203,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     ];
     final currentIndex = modeOrder.indexOf(_visualModeKey);
     final nextMode = modeOrder[
-        (currentIndex == -1 ? 0 : currentIndex + 1) % modeOrder.length];
+    (currentIndex == -1 ? 0 : currentIndex + 1) % modeOrder.length];
 
     setState(() {
       _visualModeKey = nextMode;
@@ -238,9 +226,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isTogglingVisualMode = false;
-        });
+        setState(() => _isTogglingVisualMode = false);
       }
     }
   }
@@ -253,7 +239,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
         builder: (c) => SettingsSheet(currentSettings: settings));
   }
 
-  void _openWeekPicker() async {
+  void _openWeekPicker(int realWeek) async {
     HapticFeedback.selectionClick();
     final selectedWeek = await showModalBottomSheet<int>(
       context: context,
@@ -263,17 +249,15 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     );
 
     if (selectedWeek != null && mounted) {
-      setState(() {
-        _overrideWeek = selectedWeek;
-      });
+      _setDisplayedWeek(selectedWeek, realWeek);
     }
   }
 
   Widget _buildQuickActions(
-    BuildContext context,
-    AppLocalizations l10n,
-    double opacity,
-  ) {
+      BuildContext context,
+      AppLocalizations l10n,
+      double opacity,
+      ) {
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
 
@@ -308,240 +292,221 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
 
   IconData _getIconFromName(String name) {
     switch (name) {
-      case 'water_drop':
-        return Icons.water_drop_outlined;
-      case 'local_hospital':
-        return Icons.local_hospital_outlined;
-      case 'favorite':
-        return Icons.favorite_border;
-      case 'psychology':
-        return Icons.psychology_outlined;
-      case 'accessibility_new':
-        return Icons.accessibility_new_outlined;
-      case 'spa':
-        return Icons.spa_outlined;
-      case 'child_care':
-        return Icons.child_care;
-      default:
-        return Icons.info_outline;
+      case 'water_drop': return Icons.water_drop_outlined;
+      case 'local_hospital': return Icons.local_hospital_outlined;
+      case 'favorite': return Icons.favorite_border;
+      case 'psychology': return Icons.psychology_outlined;
+      case 'accessibility_new': return Icons.accessibility_new_outlined;
+      case 'spa': return Icons.spa_outlined;
+      case 'child_care': return Icons.child_care;
+      default: return Icons.info_outline;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final repository = ref.watch(pregnancyRepositoryProvider);
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
 
-    if (l10n == null) {
+    if (l10n == null) return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
+
+    // Подписываемся на изменения настроек через наш новый провайдер
+    ref.listen<AsyncValue<PregnancySettings?>>(
+      orbitSettingsProvider,
+          (previous, next) {
+        final prevDue = previous?.value?.estimatedDueDate;
+        final nextDue = next.value?.estimatedDueDate;
+        final currentWeek = next.value?.currentWeek;
+
+        if (prevDue != null && nextDue != null && prevDue != nextDue) {
+          setState(() {
+            _overrideWeek = null;
+            _letterController.clear();
+            _lastLoadedLetterWeek = null;
+            _loadedLetterText = "";
+          });
+        }
+
+        if (currentWeek != null && _lastLoadedLetterWeek == null) {
+          _loadLetter(_overrideWeek ?? currentWeek);
+        }
+      },
+    );
+
+    // Получаем текущие настройки (заменяет StreamBuilder)
+    final settingsAsync = ref.watch(orbitSettingsProvider);
+
+    // Показываем пустой фон во время загрузки
+    if (settingsAsync.isLoading && !settingsAsync.hasValue) {
       return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
     }
 
-    return StreamBuilder<PregnancySettings?>(
-      stream: repository.watchSettings(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
-        }
+    final settings = settingsAsync.valueOrNull;
+    if (settings == null) return const OnboardingScreen();
 
-        final settings = snapshot.data;
-        if (settings == null) return const OnboardingScreen();
+    final settingsVisualMode = settings.effectiveVisualModeKey;
+    if (!_isTogglingVisualMode && _visualModeKey != settingsVisualMode) {
+      _visualModeKey = settingsVisualMode;
+    }
 
-        final settingsVisualMode = settings.effectiveVisualModeKey;
-        if (!_isTogglingVisualMode && _visualModeKey != settingsVisualMode) {
-          _visualModeKey = settingsVisualMode;
-        }
+    final realWeek = settings.currentWeek;
+    final displayWeek = _overrideWeek ?? realWeek;
+    final isBrowsingHistory = displayWeek != realWeek;
 
-        if (_cachedDueDate != null &&
-            _cachedDueDate != settings.estimatedDueDate) {
-          _overrideWeek = null;
-          _letterController.clear();
-          _lastLoadedLetterWeek = null;
-          _loadedLetterText = "";
-        }
-        _cachedDueDate = settings.estimatedDueDate;
+    return AnimatedBuilder(
+      animation: _depthController,
+      builder: (context, child) {
+        final depth = _depthController.value;
+        final bool isContentOpen = depth.abs() > 0.15;
+        final sphereScale = 1.0 - (depth.clamp(0.0, 1.0) * 0.3) + (depth.clamp(-1.0, 0.0).abs() * 0.2);
+        final sphereOffset = -depth * 80;
+        final uiOpacity = (1.0 - depth.abs() * 3).clamp(0.0, 1.0);
 
-        final realWeek = settings.currentWeek;
-        final displayWeek = _overrideWeek ?? realWeek;
-        final isBrowsingHistory = displayWeek != realWeek;
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          resizeToAvoidBottomInset: false,
+          extendBody: true,
+          extendBodyBehindAppBar: true,
+          body: GestureDetector(
+            onTap: () async {
+              FocusScope.of(context).unfocus();
+              await _saveLetter(displayWeek);
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const BreathingBackground(),
 
-        if (_lastLoadedLetterWeek != displayWeek) {
-          _loadLetter(displayWeek);
-        }
-
-        return AnimatedBuilder(
-          animation: _depthController,
-          builder: (context, child) {
-            final depth = _depthController.value;
-
-            // Ð•ÑÐ»Ð¸ ÑÐ»Ð¾Ð¹ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚, Ð±Ð»Ð¾ÐºÐ¸Ñ€ÑƒÐµÐ¼ Ð²ÐµÑ€Ñ‚Ð¸ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ÑÐ²Ð°Ð¹Ð¿ ÑÑ„ÐµÑ€Ñ‹
-            final bool isContentOpen = depth.abs() > 0.15;
-
-            final sphereScale = 1.0 -
-                (depth.clamp(0.0, 1.0) * 0.3) +
-                (depth.clamp(-1.0, 0.0).abs() * 0.2);
-            final sphereOffset = -depth * 80;
-            final uiOpacity = (1.0 - depth.abs() * 3).clamp(0.0, 1.0);
-
-            return Scaffold(
-              backgroundColor: theme.scaffoldBackgroundColor,
-              resizeToAvoidBottomInset: false,
-              extendBody: true,
-              extendBodyBehindAppBar: true,
-              body: GestureDetector(
-                onTap: () async {
-                  FocusScope.of(context).unfocus();
-                  await _saveLetter(displayWeek);
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const BreathingBackground(),
-
-                    Positioned.fill(
-                      child: Transform.translate(
-                        offset: Offset(0, sphereOffset),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onHorizontalDragEnd: (details) => _handleSphereSwipe(
-                              displayWeek, realWeek, details),
-                          child: LivingSphereDisplay(
-                            week: displayWeek,
-                            scale: sphereScale,
-                          ),
-                        ),
+                Positioned.fill(
+                  child: Transform.translate(
+                    offset: Offset(0, sphereOffset),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onHorizontalDragEnd: (details) => _handleSphereSwipe(
+                          displayWeek, realWeek, details),
+                      child: LivingSphereDisplay(
+                        week: displayWeek,
+                        scale: sphereScale,
                       ),
                     ),
-
-                    // ÐšÐÐžÐŸÐšÐ Ð’Ð«Ð‘ÐžÐ Ð ÐÐ•Ð”Ð•Ð›Ð˜
-                    Positioned(
-                      top: 130,
-                      child: AnimatedOpacity(
-                        duration: 200.ms,
-                        opacity: uiOpacity,
-                        child: GestureDetector(
-                          onTap: _openWeekPicker,
-                          child: Container(
-                            color: Colors.transparent,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  l10n.weekLabel(displayWeek).toUpperCase(),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    letterSpacing: 4.0,
-                                    fontSize: 14,
-                                    color: mutedColor.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(Icons.keyboard_arrow_down_rounded,
-                                    size: 16,
-                                    color: mutedColor.withValues(alpha: 0.3))
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    _buildQuickActions(context, l10n, uiOpacity),
-
-                    _buildCinematicInfoLayer(context, l10n, displayWeek, depth),
-                    _buildLettersLayer(
-                        context, l10n, displayWeek, settings.babyName, depth),
-
-                    // Ð¦Ð˜Ð¤Ð•Ð Ð‘Ð›ÐÐ¢
-                    if (MediaQuery.of(context).viewInsets.bottom == 0)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: AnimatedOpacity(
-                          duration: 200.ms,
-                          opacity: (1.0 - depth.abs() * 5).clamp(0.0, 1.0),
-                          child: IgnorePointer(
-                            ignoring: depth.abs() > 0.1,
-                            child: _buildDialArea(context, l10n, displayWeek,
-                                realWeek, isBrowsingHistory),
-                          ),
-                        ),
-                      ),
-
-                    // APP BAR
-                    OrbitAppBar(
-                      settings: settings,
-                      isFruitMode:
-                          _visualModeKey == PregnancySettings.visualModeFruit,
-                      onToggleMode: _toggleVisualMode,
-                      onSettingsTap: () => _openSettings(settings),
-                      depthOpacity: uiOpacity,
-                    ),
-
-                    // ðŸ”¥ ÐšÐÐžÐŸÐšÐ Ð ÐžÐ”ÐžÐ’ (ÐÐžÐ’ÐžÐ• ÐœÐ•Ð¡Ð¢Ðž + ÐŸÐ ÐžÐ’Ð•Ð ÐšÐ ÐÐÐ¡Ð¢Ð ÐžÐ™ÐšÐ˜) ðŸ”¥
-                    // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼, Ñ‚Ð¾Ð»ÑŒÐºÐ¾ ÐµÑÐ»Ð¸ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¾ Ð² Ð½Ð°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ°Ñ… (showLaborButton)
-                    if (settings.showLaborButton)
-                      Positioned(
-                        top: 110,
-                        right: 16,
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 300),
-                          opacity: isContentOpen ? 0.0 : 1.0,
-                          child: IgnorePointer(
-                            ignoring: isContentOpen,
-                            child: LaborTriggerButton(
-                              onPressed: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) => const LaborConfirmSheet(),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    OrbitNavBar(
-                      labelHome: "Home",
-                      labelTools: l10n.tabDetails,
-                      labelDiary: l10n.connectionOpenDiary,
-                      onToolsTap: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (c) => const ToolsSheet()),
-                      onDiaryTap: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (c) => const DiarySheet()),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+
+                Positioned(
+                  top: 130,
+                  child: AnimatedOpacity(
+                    duration: 200.ms,
+                    opacity: uiOpacity,
+                    child: GestureDetector(
+                      onTap: () => _openWeekPicker(realWeek),
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.weekLabel(displayWeek).toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                letterSpacing: 4.0,
+                                fontSize: 14,
+                                color: mutedColor.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down_rounded,
+                                size: 16,
+                                color: mutedColor.withValues(alpha: 0.3))
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                _buildQuickActions(context, l10n, uiOpacity),
+                _buildCinematicInfoLayer(context, l10n, displayWeek, depth),
+                _buildLettersLayer(context, l10n, displayWeek, settings.babyName, depth),
+
+                if (MediaQuery.of(context).viewInsets.bottom == 0)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedOpacity(
+                      duration: 200.ms,
+                      opacity: (1.0 - depth.abs() * 5).clamp(0.0, 1.0),
+                      child: IgnorePointer(
+                        ignoring: depth.abs() > 0.1,
+                        child: _buildDialArea(context, l10n, displayWeek,
+                            realWeek, isBrowsingHistory),
+                      ),
+                    ),
+                  ),
+
+                OrbitAppBar(
+                  settings: settings,
+                  isFruitMode: _visualModeKey == PregnancySettings.visualModeFruit,
+                  onToggleMode: _toggleVisualMode,
+                  onSettingsTap: () => _openSettings(settings),
+                  depthOpacity: uiOpacity,
+                ),
+
+                if (settings.showLaborButton)
+                  Positioned(
+                    top: 110,
+                    right: 16,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      opacity: isContentOpen ? 0.0 : 1.0,
+                      child: IgnorePointer(
+                        ignoring: isContentOpen,
+                        child: LaborTriggerButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => const LaborConfirmSheet(),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+
+                OrbitNavBar(
+                  labelHome: "Home",
+                  labelTools: l10n.tabDetails,
+                  labelDiary: l10n.connectionOpenDiary,
+                  onToolsTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (c) => const ToolsSheet()),
+                  onDiaryTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (c) => const DiarySheet()),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildCinematicInfoLayer(
-      BuildContext context, AppLocalizations l10n, int week, double depth) {
+  Widget _buildCinematicInfoLayer(BuildContext context, AppLocalizations l10n, int week, double depth) {
     if (depth <= 0.05) return const SizedBox();
 
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).languageCode;
-    final objectData = ref
-        .read(insightRepositoryProvider)
-        .getObjectData(week, locale, _visualModeKey);
-    final insights =
-        ref.read(insightRepositoryProvider).getInsightsForWeek(week, locale);
+    final objectData = ref.read(insightRepositoryProvider).getObjectData(week, locale, _visualModeKey);
+    final insights = ref.read(insightRepositoryProvider).getInsightsForWeek(week, locale);
     final slideUp = (1.0 - depth) * 500;
     final opacity = ((depth - 0.2) / 0.8).clamp(0.0, 1.0);
 
@@ -560,7 +525,6 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ÐšÐ½Ð¾Ð¿ÐºÐ° ÑÐ²ÐµÑ€Ð½ÑƒÑ‚ÑŒ
                 IconButton(
                     onPressed: _resetView,
                     icon: Container(
@@ -571,11 +535,9 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
                       child: const Icon(Icons.keyboard_arrow_down_rounded,
                           color: Colors.black54),
                     )),
-
                 const SizedBox(height: 10),
                 Text(objectData.title,
-                    style: theme.textTheme.displayLarge
-                        ?.copyWith(fontSize: 42, height: 1.1),
+                    style: theme.textTheme.displayLarge?.copyWith(fontSize: 42, height: 1.1),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 Padding(
@@ -584,8 +546,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
                         style: theme.textTheme.bodyMedium?.copyWith(
                             fontSize: 18,
                             height: 1.5,
-                            color: theme.textTheme.bodyMedium?.color
-                                ?.withValues(alpha: 0.8)),
+                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8)),
                         textAlign: TextAlign.center)),
                 const SizedBox(height: 28),
                 FetalGrowthSection(week: week),
@@ -612,25 +573,20 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
                                       child: Column(children: [
                                         Row(children: [
                                           Icon(iconData,
-                                              color: theme
-                                                  .textTheme.bodyMedium?.color,
+                                              color: theme.textTheme.bodyMedium?.color,
                                               size: 22),
                                           const SizedBox(width: 8),
                                           Expanded(
                                               child: Text(item.title,
-                                                  style: theme
-                                                      .textTheme.labelSmall
-                                                      ?.copyWith(
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                  style: theme.textTheme.labelSmall?.copyWith(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold),
                                                   maxLines: 1))
                                         ]),
                                         const Spacer(),
                                         Text(
                                           item.content,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(fontSize: 14),
+                                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                                           maxLines: 5,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -646,8 +602,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     );
   }
 
-  Widget _buildLettersLayer(BuildContext context, AppLocalizations l10n,
-      int week, String? babyName, double depth) {
+  Widget _buildLettersLayer(BuildContext context, AppLocalizations l10n, int week, String? babyName, double depth) {
     if (depth >= 0) return const SizedBox();
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
@@ -726,8 +681,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     );
   }
 
-  Widget _buildDialArea(BuildContext context, AppLocalizations l10n,
-      int displayWeek, int realWeek, bool isBrowsingHistory) {
+  Widget _buildDialArea(BuildContext context, AppLocalizations l10n, int displayWeek, int realWeek, bool isBrowsingHistory) {
     final theme = Theme.of(context);
     return Container(
       height: 250,
@@ -737,11 +691,11 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
         children: [
           if (isBrowsingHistory)
             GestureDetector(
-              onTap: () => setState(() => _overrideWeek = null),
+              onTap: () => _setDisplayedWeek(realWeek, realWeek),
               child: Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                       color: theme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20)),
@@ -805,9 +759,9 @@ class _SphereActionButton extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: color.withValues(alpha: 0.85),
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: color.withValues(alpha: 0.85),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

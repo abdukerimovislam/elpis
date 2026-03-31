@@ -36,7 +36,8 @@ class PregnancySettings {
     this.languageCode = 'en',
     this.themeKey = 'serenity',
     this.isFruitMode = true,
-    this.visualModeKey = visualModeFruit,
+    // ИСПРАВЛЕНО: Добавлен префикс класса для корректной работы Isar Generator
+    this.visualModeKey = PregnancySettings.visualModeFruit,
     this.isLaborMode = false,
     this.showLaborButton = true,
     this.partnerName,
@@ -86,7 +87,8 @@ class PregnancySettings {
       estimatedDueDate: DateTime.now().add(const Duration(days: 280)),
       themeKey: 'serenity',
       isFruitMode: true,
-      visualModeKey: visualModeFruit,
+      // ИСПРАВЛЕНО: Добавлен префикс класса
+      visualModeKey: PregnancySettings.visualModeFruit,
       showLaborButton: true,
     );
   }
@@ -110,5 +112,38 @@ class PregnancySettings {
     if (week < 1) return 1;
     if (week > 42) return 42;
     return week;
+  }
+
+  // ------------------------------------------------------------------
+  // ЛОГИКА ИЗОБРАЖЕНИЙ: Динамическое получение путей к ассетам
+  // ------------------------------------------------------------------
+
+  /// Возвращает путь к картинке для ТЕКУЩЕЙ недели
+  @ignore
+  String get currentImagePath => getImagePathForWeek(currentWeek);
+
+  /// Возвращает путь к картинке для ЛЮБОЙ указанной недели (для свайпов)
+  String getImagePathForWeek(int targetWeek) {
+    // Ограничиваем неделю диапазоном, для которого есть картинки
+    int safeWeek = targetWeek.clamp(4, 40);
+
+    // Если срок меньше 4 недель, показываем начальную стадию
+    if (targetWeek < 4) safeWeek = 4;
+    if (targetWeek > 40) safeWeek = 40;
+
+    switch (effectiveVisualModeKey) {
+      case visualModeGrowth:
+      // Режим: Развитие плода (3D рендеры)
+        return 'assets/images/fetal_growth/realistic/week_$safeWeek.webp';
+
+      case visualModeRealistic:
+      // Режим: Реалистичные предметы (маковое зернышко, конфета и тд)
+        return 'assets/images/realistic/week_$safeWeek.webp';
+
+      case visualModeFruit:
+      default:
+      // Режим: Фрукты и овощи (по умолчанию)
+        return 'assets/images/fruits/week_$safeWeek.webp';
+    }
   }
 }

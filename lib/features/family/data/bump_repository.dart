@@ -3,19 +3,21 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:isar/isar.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../domain/bump_snapshot.dart';
-import '../../../main.dart';
 
-// ИСПРАВЛЕНО: имя файла совпадает с именем этого файла
+import '../domain/bump_snapshot.dart';
+// ИСПРАВЛЕНО: Теперь берем базу безопасно через провайдер, а не из main.dart
+import '../../pregnancy/data/pregnancy_repository.dart';
+
 part 'bump_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 BumpRepository bumpRepository(BumpRepositoryRef ref) {
-  return BumpRepository(isarInstance);
+  // ИСПРАВЛЕНО: Безопасное получение инстанса Isar
+  return BumpRepository(ref.watch(isarDatabaseProvider).valueOrNull);
 }
 
 class BumpRepository {
-  final Isar _isar;
+  final Isar? _isar;
 
   BumpRepository(this._isar);
 
@@ -25,8 +27,13 @@ class BumpRepository {
   }
 
   Stream<List<BumpSnapshot>> watchSnapshots() async* {
+    if (_isar == null) {
+      yield [];
+      return;
+    }
+
     final path = await _localPath;
-    yield* _isar.bumpSnapshots
+    yield* _isar!.bumpSnapshots
         .where()
         .sortByWeekDesc()
         .watch(fireImmediately: true)
@@ -39,6 +46,8 @@ class BumpRepository {
   }
 
   Future<void> savePhoto(int week, String tempPath) async {
+    if (_isar == null) return;
+
     final path = await _localPath;
     final extension = p.extension(tempPath);
     final fileName =
@@ -47,9 +56,9 @@ class BumpRepository {
 
     await File(tempPath).copy(permanentPath);
 
-    await _isar.writeTxn(() async {
+    await _isar!.writeTxn(() async {
       final existing =
-          await _isar.bumpSnapshots.filter().weekEqualTo(week).findFirst();
+      await _isar!.bumpSnapshots.filter().weekEqualTo(week).findFirst();
 
       if (existing != null) {
         final oldFile = File(p.join(path, existing.fileName));
@@ -58,11 +67,11 @@ class BumpRepository {
         }
         existing.fileName = fileName;
         existing.date = DateTime.now();
-        await _isar.bumpSnapshots.put(existing);
+        await _isar!.bumpSnapshots.put(existing);
         return;
       }
 
-      await _isar.bumpSnapshots.put(BumpSnapshot(
+      await _isar!.bumpSnapshots.put(BumpSnapshot(
         week: week,
         fileName: fileName,
         date: DateTime.now(),
@@ -71,13 +80,15 @@ class BumpRepository {
   }
 
   Future<void> deletePhoto(int id) async {
+    if (_isar == null) return;
+
     final path = await _localPath;
-    await _isar.writeTxn(() async {
-      final photo = await _isar.bumpSnapshots.get(id);
+    await _isar!.writeTxn(() async {
+      final photo = await _isar!.bumpSnapshots.get(id);
       if (photo != null) {
         final file = File(p.join(path, photo.fileName));
         if (await file.exists()) await file.delete();
-        await _isar.bumpSnapshots.delete(id);
+        await _isar!.bumpSnapshots.delete(id);
       }
     });
   }

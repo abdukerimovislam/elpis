@@ -79,8 +79,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDeleteData => 'Delete all data';
 
   @override
-  String get settingsDeleteDataConfirm =>
-      'Are you sure? This will delete all your photos, names and history. App will restart.';
+  String get settingsDeleteDataConfirm => 'Are you sure? This will delete all your photos, names and history. App will restart.';
 
   @override
   String get settingsPrivacy => 'Privacy Policy';
@@ -126,8 +125,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get visitQuestions => 'YOUR QUESTIONS';
 
   @override
-  String get visitQuestionsPlaceholder =>
-      'What to ask the doctor?\n- Can I fly?\n- Which vitamins to take?';
+  String get visitQuestionsPlaceholder => 'What to ask the doctor?\n- Can I fly?\n- Which vitamins to take?';
 
   @override
   String get visitResults => 'RESULTS';
@@ -308,8 +306,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kegelTitle => 'Kegel Training';
 
   @override
-  String get kegelSubtitle =>
-      'Strengthening pelvic floor muscles prepares body for labor.';
+  String get kegelSubtitle => 'Strengthening pelvic floor muscles prepares body for labor.';
 
   @override
   String get kegelPhaseSqueeze => 'SQUEEZE';
@@ -344,8 +341,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contractionTitle => 'Contractions';
 
   @override
-  String get contractionInstruction =>
-      'Press the button when contraction starts';
+  String get contractionInstruction => 'Press the button when contraction starts';
 
   @override
   String get contractionRelax => 'Rest and breathe deeply';
@@ -472,8 +468,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weightInputHint => 'Enter weight to get analysis';
 
   @override
-  String get weightNoParams =>
-      'Fill in \'Pre-pregnancy weight\' in settings for smart analysis';
+  String get weightNoParams => 'Fill in \'Pre-pregnancy weight\' in settings for smart analysis';
 
   @override
   String get weightUnit => 'kg';
@@ -482,16 +477,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weightSave => 'Save Weight';
 
   @override
-  String get weightFeedbackLow =>
-      'Your weight gain is slightly below average. Remember to eat balanced meals.';
+  String get weightFeedbackLow => 'Your weight gain is slightly below average. Remember to eat balanced meals.';
 
   @override
-  String get weightFeedbackHigh =>
-      'Your weight gain is slightly above average. Focus on healthy foods and hydration.';
+  String get weightFeedbackHigh => 'Your weight gain is slightly above average. Focus on healthy foods and hydration.';
 
   @override
-  String get weightFeedbackNormal =>
-      'Great job! Your weight gain is perfectly on track.';
+  String get weightFeedbackNormal => 'Great job! Your weight gain is perfectly on track.';
 
   @override
   String get nameTitle => 'Search Settings';
@@ -524,8 +516,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameEmptyTitle => 'No names found';
 
   @override
-  String get nameEmptyBody =>
-      'Try changing filters\nor selecting other countries';
+  String get nameEmptyBody => 'Try changing filters\nor selecting other countries';
 
   @override
   String get nameEmptyAction => 'Adjust Filters';
@@ -740,8 +731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolIsItNormalSub => 'Symptom check';
 
   @override
-  String get normalDisclaimer =>
-      'This guide is for reference only. Always contact your doctor for professional advice.';
+  String get normalDisclaimer => 'This guide is for reference only. Always contact your doctor for professional advice.';
 
   @override
   String get normalSearchHint => 'Search symptoms (e.g. Headache)';
@@ -867,8 +857,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get symptomsTitle => 'Recent Symptoms';
 
   @override
-  String get pdfDisclaimer =>
-      'Disclaimer: This report is for tracking purposes only. Consult your doctor.';
+  String get pdfDisclaimer => 'Disclaimer: This report is for tracking purposes only. Consult your doctor.';
 
   @override
   String get diaryTitle => 'Dear Baby...';
@@ -877,8 +866,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diarySubtitle => 'Your letters and thoughts';
 
   @override
-  String get diaryEmpty =>
-      'You haven\'t written any notes yet. Tap on the weekly card to write a letter.';
+  String get diaryEmpty => 'You haven\'t written any notes yet. Tap on the weekly card to write a letter.';
 
   @override
   String get settingsLegalTitle => 'LEGAL & INFO';
@@ -890,8 +878,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disclaimerTitle => 'Medical Disclaimer';
 
   @override
-  String get disclaimerBody =>
-      'This application is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. \n\nAlways seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. \n\nNever disregard professional medical advice or delay in seeking it because of something you have read in this application.';
+  String get disclaimerBody => 'This application is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. \n\nAlways seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. \n\nNever disregard professional medical advice or delay in seeking it because of something you have read in this application.';
 
   @override
   String get commonUnderstood => 'Understood';
@@ -945,8 +932,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laborConfirmTitle => 'Baby is coming?';
 
   @override
-  String get laborConfirmBody =>
-      'This will switch the app to Labor Mode. We\'ll hide everything except the essentials: Contraction Timer and Hospital Checklist.';
+  String get laborConfirmBody => 'This will switch the app to Labor Mode. We\'ll hide everything except the essentials: Contraction Timer and Hospital Checklist.';
 
   @override
   String get laborConfirmPartnerPhone => 'Partner\'s Mobile Number';
@@ -964,8 +950,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laborExitTitle => 'End Labor Mode?';
 
   @override
-  String get laborExitBody =>
-      'Congratulations if the baby is here! Or was it a false alarm?';
+  String get laborExitBody => 'Congratulations if the baby is here! Or was it a false alarm?';
 
   @override
   String get laborExitEndBtn => 'END MODE';
@@ -974,8 +959,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get laborEmergencyPrepTitle => 'EMERGENCY PREP';
 
   @override
-  String get laborEmergencyPrepSubtitle =>
-      'Fill this now to save time during contractions.';
+  String get laborEmergencyPrepSubtitle => 'Fill this now to save time during contractions.';
 
   @override
   String get laborPartnerName => 'Partner\'s Name';
@@ -1044,4 +1028,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jumpToWeek => 'JUMP TO WEEK';
+
+  @override
+  String get growthSectionTitle => 'How Baby Is Growing';
+
+  @override
+  String get growthSectionSubtitle => 'A smooth visual growth journey through pregnancy';
+
+  @override
+  String growthStage(int stage) {
+    return 'Stage $stage';
+  }
 }

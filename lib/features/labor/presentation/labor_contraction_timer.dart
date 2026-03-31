@@ -47,14 +47,20 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer>
     final timerState = ref.watch(contractionTimerProvider);
     final isRunning = timerState.isActive;
     final contractionsStream =
-        ref.watch(pregnancyRepositoryProvider).watchContractions();
+    ref.watch(pregnancyRepositoryProvider).watchContractions();
 
-    if (isRunning && !_pulseController.isAnimating) {
-      _pulseController.repeat(reverse: true);
-    } else if (!isRunning && _pulseController.isAnimating) {
-      _pulseController.stop();
-      _pulseController.reset();
-    }
+    // ИСПРАВЛЕНО: Side-effects (запуск анимации) вынесены в ref.listen
+    ref.listen(contractionTimerProvider, (previous, next) {
+      final wasRunning = previous?.isActive ?? false;
+      final isNowRunning = next.isActive;
+
+      if (isNowRunning && !wasRunning) {
+        _pulseController.repeat(reverse: true);
+      } else if (!isNowRunning && wasRunning) {
+        _pulseController.stop();
+        _pulseController.reset();
+      }
+    });
 
     const activeColor = Color(0xFFFF9A9E);
     const restColor = Color(0xFFa1c4fd);
@@ -87,20 +93,20 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer>
           onTap: timerState.isProcessing
               ? null
               : () async {
-                  HapticFeedback.heavyImpact();
-                  try {
-                    await ref
-                        .read(contractionTimerProvider.notifier)
-                        .toggleTimer();
-                  } catch (_) {
-                    if (!context.mounted) {
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.errorGeneric)),
-                    );
-                  }
-                },
+            HapticFeedback.heavyImpact();
+            try {
+              await ref
+                  .read(contractionTimerProvider.notifier)
+                  .toggleTimer();
+            } catch (_) {
+              if (!context.mounted) {
+                return;
+              }
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.errorGeneric)),
+              );
+            }
+          },
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -175,8 +181,8 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer>
                         timerState.isProcessing
                             ? l10n.commonSave
                             : isRunning
-                                ? l10n.laborTimerBreathe
-                                : l10n.laborTimerStart,
+                            ? l10n.laborTimerBreathe
+                            : l10n.laborTimerStart,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -215,7 +221,7 @@ class _LaborContractionTimerState extends ConsumerState<LaborContractionTimer>
             }
 
             final duration =
-                lastCompleted.endTime!.difference(lastCompleted.startTime);
+            lastCompleted.endTime!.difference(lastCompleted.startTime);
 
             String frequencyText = '--';
             if (history.length >= 2) {

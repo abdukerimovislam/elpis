@@ -6,7 +6,7 @@ part of 'contraction_timer_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$contractionTimerHash() => r'f873846105b1e29cadc776ef01d57e74aa6da929';
+String _$contractionTimerHash() => r'711d331b1b2c3cb26c9efb5703718ad80023c658';
 
 /// See also [ContractionTimer].
 @ProviderFor(ContractionTimer)

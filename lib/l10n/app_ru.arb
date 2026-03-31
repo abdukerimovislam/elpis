@@ -1,0 +1,447 @@
+{
+  "@@locale": "ru",
+  "appName": "Aura",
+
+  "weekLabel": "{week} НЕДЕЛЯ",
+  "@weekLabel": {
+    "placeholders": {
+      "week": { "type": "int" }
+    }
+  },
+
+  "menuHealth": "Здоровье и Тело",
+  "menuFamily": "Семья и Воспоминания",
+  "menuPrep": "Подготовка",
+
+  "tabConnection": "Связь",
+  "tabDetails": "Детали",
+
+  "connectionTitle": "Письмо малышу",
+  "connectionTitleNamed": "Письмо для {name}",
+  "@connectionTitleNamed": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "connectionPlaceholder": "Напишите что-нибудь сокровенное...",
+  "connectionSaveAction": "Сохранить мысль",
+  "connectionOpenDiary": "Открыть дневник",
+
+  "onboardingTitle": "Когда ждем чудо?",
+  "onboardingSubtitle": "Мы персонализируем ваш путь",
+  "onboardingNameHint": "Имя малыша (необязательно)",
+  "onboardingAction": "Начать",
+
+  "settingsTitle": "Настройки",
+  "settingsNameLabel": "КАК МЫ НАЗОВЕМ МАЛЫША?",
+  "settingsNameHint": "Например, Мия или Лев",
+  "settingsDateLabel": "ДАТА РОДОВ",
+  "settingsSave": "Сохранить",
+  "settingsDeleteData": "Удалить все данные",
+  "settingsDeleteDataConfirm": "Вы уверены? Это удалит все ваши фото, имена и историю. Приложение будет перезапущено.",
+  "settingsPrivacy": "Политика конфиденциальности",
+
+  "loadingTitle": "Загрузка...",
+  "loadingBody": "Получаем данные для этой недели.",
+  "weekDefault": "Неделя {week}",
+
+  "waterTitle": "Водный баланс",
+  "waterFact": "Вода помогает обновлять околоплодные воды каждые 3 часа.",
+  "waterProgress": "из {goal}",
+  "@waterProgress": {
+    "placeholders": {
+      "goal": { "type": "int" }
+    }
+  },
+
+  "visitNew": "Новый визит",
+  "visitEdit": "Редактировать визит",
+  "visitSectionMain": "ОСНОВНОЕ",
+  "visitTitleHint": "Название (напр. УЗИ)",
+  "visitDoctor": "Врач / Клиника",
+  "visitQuestions": "ВАШИ ВОПРОСЫ",
+  "visitQuestionsPlaceholder": "Что спросить у врача?\n- Можно ли мне летать?\n- Какие витамины пить?",
+  "visitResults": "РЕЗУЛЬТАТЫ",
+  "visitWeight": "Вес (кг)",
+  "visitBpSys": "Вверх",
+  "visitBpDia": "Вниз",
+  "visitNotesHint": "Заметки и рецепты врача...",
+  "visitCalendar": "Календарь визитов",
+  "visitEmpty": "Нет предстоящих визитов",
+  "visitFab": "Визит",
+  "visitBadgeQuestions": "Вопросы",
+  "visitBadgeResults": "Результаты",
+
+  "commonCancel": "Отмена",
+  "commonSave": "Сохранить",
+  "commonDelete": "Удалить",
+  "commonMin": "мин",
+  "commonSec": "сек",
+
+  "toolsTitle": "Центр заботы",
+  "toolSymptoms": "Самочувствие",
+  "toolSymptomsSub": "Дневник симптомов",
+  "toolKegel": "Кегель",
+  "toolKegelSub": "Мышцы таза",
+  "toolNames": "Имена",
+  "toolNamesSub": "Выбирайте вместе",
+  "toolContractions": "Схватки",
+  "toolContractionsSub": "Таймер родов",
+  "toolWeight": "Вес",
+  "toolWeightSub": "Трекер",
+  "toolWater": "Вода",
+  "toolWaterSub": "Баланс",
+  "toolKicks": "Шевеления",
+  "toolKicksSub": "Счетчик",
+  "toolBag": "Сумка в роддом",
+  "toolBagSub": "Список вещей",
+  "toolVisits": "Визиты",
+  "toolVisitsSub": "План и заметки",
+  "toolGallery": "Животик",
+  "toolGallerySub": "История роста",
+
+  "symptomTitle": "Как вы себя чувствуете?",
+  "symptomMoodLabel": "НАСТРОЕНИЕ",
+  "symptomLabel": "СИМПТОМЫ",
+  "symptomSave": "Сохранить запись",
+  "symNausea": "Тошнота",
+  "symFatigue": "Усталость",
+  "symHeartburn": "Изжога",
+  "symSwelling": "Отеки",
+  "symHeadache": "Головная боль",
+  "symInsomnia": "Бессонница",
+  "symBackPain": "Боль в спине",
+  "symHunger": "Голод",
+  "symBabyActive": "Малыш активен",
+  "symAnxiety": "Тревожность",
+
+  "kickTitle": "СЕАНС СВЯЗИ",
+  "kickInstruction": "Нажмите при\nдвижении",
+  "kickCount": "Движений: {count}",
+  "@kickCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "kickGoal": "Цель: 10 шевелений",
+  "kickSessionDone": "Сеанс завершен",
+  "kickDialogTitle": "Отличная работа!",
+  "kickDialogBody": "Вы насчитали {count} шевелений за {time}.",
+  "@kickDialogBody": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "time": { "type": "String" }
+    }
+  },
+
+  "kegelTitle": "Упражнения Кегеля",
+  "kegelSubtitle": "Укрепление мышц тазового дна подготавливает тело к родам.",
+  "kegelPhaseSqueeze": "СЖАТИЕ",
+  "kegelPhaseSqueezeInstr": "Напрягите мышцы",
+  "kegelPhaseRelax": "РАССЛАБЛЕНИЕ",
+  "kegelPhaseRelaxInstr": "Выдохните и расслабьтесь",
+  "kegelPhaseDone": "Отлично!",
+  "kegelPhaseDoneInstr": "Тренировка завершена",
+  "kegelRepCounter": "Повтор {current} из {total}",
+  "@kegelRepCounter": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "kegelStart": "Начать",
+  "kegelFinish": "Завершить",
+
+  "contractionTitle": "Схватки",
+  "contractionInstruction": "Нажмите кнопку, когда начнется схватка",
+  "contractionRelax": "Отдыхайте и глубоко дышите",
+  "contractionLabelActive": "СХВАТКА",
+  "contractionLabelRest": "ОТДЫХ",
+  "contractionBtnStart": "Старт",
+  "contractionBtnStop": "Стоп",
+  "contractionHistory": "ИСТОРИЯ",
+  "contractionColStart": "Начало",
+  "contractionColDuration": "Длительность",
+  "contractionColInterval": "Частота",
+  "contractionEmpty": "Пока нет записей",
+
+  "checklistTitle": "Сумка в роддом",
+  "checklistProgress": "Собрано на {percent}%",
+  "@checklistProgress": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "checklistTabDocs": "Документы",
+  "checklistTabMom": "Для мамы",
+  "checklistTabBaby": "Для малыша",
+  "checklistEmpty": "Пусто",
+
+  "checkDocPassport": "Паспорт / ID",
+  "checkDocRecords": "Обменная карта",
+  "checkDocInsurance": "Полис ОМС / СНИЛС",
+  "checkDocContract": "Контракт на роды (если есть)",
+  "checkDocTests": "Свежие анализы",
+  "checkMomSlippers": "Моющиеся тапочки",
+  "checkMomWater": "Вода без газа (2-3 бутылки)",
+  "checkMomSocks": "Теплые носки / Компрессионные",
+  "checkMomLipBalm": "Бальзам для губ",
+  "checkMomCharger": "Телефон и длинная зарядка",
+  "checkMomPads": "Послеродовые прокладки",
+  "checkMomUnderwear": "Одноразовые трусики",
+  "checkMomBra": "Бюстгальтер для кормления",
+  "checkMomCream": "Крем для сосков",
+  "checkMomHygiene": "Средства гигиены (зуб. паста, мыло)",
+  "checkBabyDiapers": "Подгузники (Newborn)",
+  "checkBabyWipes": "Влажные салфетки (0+)",
+  "checkBabyCream": "Крем под подгузник",
+  "checkBabyClothes": "Слипы / Боди (3-4 шт)",
+  "checkBabyHat": "Шапочка и носочки",
+  "checkBabyOutfit": "Одежда на выписку",
+
+  "weightTitle": "Контроль веса",
+  "weightWeek": "Неделя {week}",
+  "@weightWeek": {
+    "placeholders": {
+      "week": { "type": "int" }
+    }
+  },
+  "weightInputHint": "Введите вес для анализа",
+  "weightNoParams": "Укажите 'Вес до беременности' в настройках для умного анализа",
+  "weightUnit": "кг",
+  "weightSave": "Сохранить вес",
+  "weightFeedbackLow": "Набор веса чуть ниже нормы. Не забывайте про сложные углеводы.",
+  "weightFeedbackHigh": "Набор веса чуть выше нормы. Постарайтесь пить больше воды.",
+  "weightFeedbackNormal": "Идеальный темп! Ваше тело работает как часы.",
+
+  "nameTitle": "Настройки поиска",
+  "nameReset": "Сбросить",
+  "nameGenderLabel": "ПОЛ",
+  "nameGenderAny": "Любой",
+  "nameGenderBoy": "Мальчик",
+  "nameGenderGirl": "Девочка",
+  "nameActionShow": "Показать имена",
+  "nameTabSearch": "Поиск",
+  "nameTabFavorites": "Избранное",
+  "nameEmptyTitle": "Имена не найдены",
+  "nameEmptyBody": "Попробуйте изменить фильтры\nили выбрать другие страны",
+  "nameEmptyAction": "Изменить фильтры",
+  "nameFavEmpty": "Список избранного пуст",
+
+  "countryRU": "🇷🇺 Русские",
+  "countryUS": "🇺🇸 Американские",
+  "countryTR": "🇹🇷 Турецкие",
+  "countryKZ": "🇰🇿 Казахские",
+  "countryUA": "🇺🇦 Украинские",
+  "countryPL": "🇵🇱 Польские",
+  "countryDE": "🇩🇪 Немецкие",
+  "countryFR": "🇫🇷 Французские",
+  "countryIT": "🇮🇹 Итальянские",
+  "countryES": "🇪🇸 Испанские",
+  "countryGB": "🇬🇧 Британские",
+  "countryCA": "🇨🇦 Канадские",
+  "countryBR": "🇧🇷 Бразильские",
+  "countryAE": "🇦🇪 Арабские (ОАЭ)",
+  "countrySA": "🇸🇦 Арабские (Саудовская Аравия)",
+  "countryEG": "🇪🇬 Египетские",
+  "countryMA": "🇲🇦 Марокканские",
+  "countryNL": "🇳🇱 Голландские",
+  "countryCZ": "🇨🇿 Чешские",
+  "countryRO": "🇷🇴 Румынские",
+  "countryAR": "🇦🇷 Аргентинские",
+  "countryMX": "🇲🇽 Мексиканские",
+  "countryJP": "🇯🇵 Японские",
+  "countryCN": "🇨🇳 Китайские",
+  "countryKR": "🇰🇷 Корейские",
+  "countryIN": "🇮🇳 Индийские",
+  "countryIL": "🇮🇱 Еврейские",
+  "countryGR": "🇬🇷 Греческие",
+  "countryIE": "🇮🇪 Ирландские",
+  "countryPT": "🇵🇹 Португальские",
+  "countryAU": "🇦🇺 Австралийские",
+
+  "galleryTitle": "Фото животика",
+  "gallerySubtitle": "Сохраняйте воспоминания каждую неделю",
+  "galleryWeek": "Неделя {week}",
+  "@galleryWeek": {
+    "placeholders": {
+      "week": { "type": "int" }
+    }
+  },
+  "galleryCamera": "Сделать фото",
+  "galleryPick": "Выбрать из галереи",
+  "galleryDeleteTitle": "Удалить фото?",
+  "galleryDeleteBody": "Это действие нельзя отменить.",
+  "onboardingModeLmp": "По дате последней менструации",
+  "onboardingModeEdd": "Я знаю дату родов",
+  "onboardingLmpLabel": "Первый день последней менструации",
+  "onboardingEddLabel": "Предполагаемая дата родов",
+  "onboardingCalculatedDate": "Примерная дата: {date}",
+  "@onboardingCalculatedDate": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "homeReturnToCurrent": "Вернуться к {week} неделе",
+  "@homeReturnToCurrent": {
+    "placeholders": {
+      "week": { "type": "int" }
+    }
+  },
+  "babyNameLabel": "Имя малыша",
+  "currentWeekLabel": "Текущая неделя",
+  "languageLabel": "Язык",
+  "saveButton": "Сохранить",
+  "weightLabel": "ВЕС",
+  "lengthLabel": "РОСТ",
+  "mode": "Визуальный режим",
+  "fruit": "Фрукты",
+  "realistic": "Реализм",
+  "labelWeight": "ВЕС",
+  "labelLength": "РОСТ",
+  "errorNoImage": "Нет изображения",
+
+  "valLessThanOneGram": "< 1 г",
+  "valLessThanOneMm": "< 1 мм",
+
+  "valGram": "{value} г",
+  "@valGram": { "placeholders": { "value": {} } },
+
+  "valKg": "{value} кг",
+  "@valKg": { "placeholders": { "value": {} } },
+
+  "valMm": "{value} мм",
+  "@valMm": { "placeholders": { "value": {} } },
+
+  "valCm": "{value} см",
+  "@valCm": { "placeholders": { "value": {} } },
+  "toolIsItNormal": "Это нормально?",
+  "toolIsItNormalSub": "Проверка симптомов",
+  "normalDisclaimer": "Это руководство носит исключительно справочный характер. Всегда консультируйтесь с вашим врачом.",
+  "normalSearchHint": "Поиск симптомов (напр. Головная боль)",
+
+  "statusCommon": "Норма",
+  "statusMonitor": "Наблюдать",
+  "statusUrgent": "К врачу",
+
+  "actionContactDoctor": "СВЯЗАТЬСЯ С ВРАЧОМ",
+  "toolReport": "Отчет врачу",
+  "toolReportSub": "Экспорт в PDF",
+  "settingsExportPdf": "Экспорт отчета (PDF)",
+  "exporting": "Создание PDF...",
+  "kickTabTimer": "Таймер",
+  "kickTabHistory": "История",
+  "kickBtnStart": "Начать сеанс",
+  "kickHistoryEmpty": "История пока пуста",
+
+  "weightChartTitle": "График прогресса",
+  "weightHistoryTitle": "Недавняя история",
+  "weightChartEmpty": "Добавьте минимум 2 записи, чтобы увидеть график",
+
+  "settingsThemeTitle": "ТЕМА",
+  "settingsThemeSerenity": "Спокойствие",
+  "settingsThemeNature": "Природа",
+  "settingsThemeWarmth": "Тепло",
+
+  "settingsModeTitle": "ВИЗУАЛЬНЫЙ РЕЖИМ",
+  "settingsModeFruit": "Фрукты",
+  "settingsModeRealistic": "Реализм",
+  "contractionBreathIn": "Вдох...",
+  "contractionBreathOut": "Выдох...",
+  "contractionAlertTitle": "Пора в роддом?",
+  "contractionAlertMessage": "Сработало правило (5-1-1)! Время собираться.",
+  "contractionTapToStop": "Нажмите на круг, чтобы остановить",
+  "kegelSettingsTitle": "Настройки тренировки",
+  "kegelSettingWork": "Сжатие (сек)",
+  "kegelSettingRest": "Отдых (сек)",
+  "kegelSettingReps": "Повторения",
+  "kegelPaused": "Пауза",
+  "pdfReportTitle": "Отчет Bloom Mama",
+  "generatedDate": "Сформирован",
+  "dateLabel": "Дата",
+  "weightUnitLabel": "Вес (кг)",
+  "changeLabel": "+/-",
+  "durationLabel": "Длительность",
+  "kickCountLabel": "Шевеления",
+  "symptomsTitle": "Недавние симптомы",
+  "pdfDisclaimer": "Отказ от ответственности: Этот отчет предназначен только для отслеживания. Проконсультируйтесь с врачом.",
+  "diaryTitle": "Дорогой малыш...",
+  "diarySubtitle": "Ваши мысли и письма",
+  "diaryEmpty": "Вы еще ничего не написали. Нажмите на карточку недели, чтобы написать письмо.",
+  "settingsLegalTitle": "ИНФОРМАЦИЯ И ПРАВА",
+  "settingsDisclaimer": "Медицинский отказ",
+
+  "disclaimerTitle": "Медицинский отказ",
+  "disclaimerBody": "Это приложение предназначено исключительно для информационных целей и не заменяет профессиональную медицинскую консультацию, диагностику или лечение. \n\nВсегда обращайтесь за советом к своему врачу по любым вопросам, касающимся вашего здоровья. \n\nНикогда не пренебрегайте медицинскими советами и не откладывайте обращение к врачу из-за информации, прочитанной в этом приложении.",
+  "commonUnderstood": "Понятно",
+  "defaultMomName": "Будущая мама",
+  "errorGeneric": "Что-то пошло не так",
+  "errorPdfGeneration": "Не удалось создать PDF",
+  "errorDeleteData": "Не удалось удалить данные",
+  "errorOpenBrowser": "Не удалось открыть браузер",
+
+  "themeSerenity": "Спокойствие",
+  "themeNature": "Природа",
+  "themeWarmth": "Тепло",
+
+  "settingsVisualMode": "ВИЗУАЛЬНЫЙ РЕЖИМ",
+  "visualModeFruit": "Фрукты",
+  "visualModeRealistic": "Реализм",
+
+  "exportingPdf": "Экспорт...",
+  "laborModeTitle": "РЕЖИМ РОДОВ",
+  "laborTriggerButton": "РОДЫ НАЧАЛИСЬ",
+  "laborMotivationalQuote": "У тебя все получится, Мама! 💪",
+
+  "laborConfirmTitle": "Малыш уже в пути?",
+  "laborConfirmBody": "Приложение перейдет в Режим родов. Мы скроем все лишнее и оставим только самое необходимое: Таймер схваток и Список в роддом.",
+  "laborConfirmPartnerPhone": "Номер телефона партнера",
+  "laborConfirmNotifySwitch": "Сообщить партнеру по WhatsApp/SMS",
+  "laborConfirmStartBtn": "ДА, ВКЛЮЧИТЬ РЕЖИМ РОДОВ",
+  "laborConfirmFalseAlarm": "Ложная тревога",
+
+  "laborExitTitle": "Завершить Режим родов?",
+  "laborExitBody": "Поздравляем, если малыш уже здесь! Или это была ложная тревога?",
+  "laborExitEndBtn": "ЗАВЕРШИТЬ РЕЖИМ",
+
+  "laborEmergencyPrepTitle": "ПОДГОТОВКА",
+  "laborEmergencyPrepSubtitle": "Заполните это сейчас, чтобы сэкономить время во время схваток.",
+  "laborPartnerName": "Имя партнера",
+  "laborPartnerPhone": "Телефон партнера",
+  "laborDoctorPhone": "Телефон врача",
+  "laborHospitalAddress": "Адрес роддома",
+  "laborHospitalBtn": "В РОДДОМ",
+  "laborDoctorBtn": "ВРАЧУ",
+
+  "laborTimerContraction": "СХВАТКА",
+  "laborTimerResting": "ОТДЫХ",
+  "laborTimerBreathe": "ДЫШИТЕ",
+  "laborTimerStart": "СТАРТ",
+  "laborTimerReady": "Готовы к первой схватке",
+  "laborTimerMonitoring": "Отслеживание...",
+  "laborTimerLastDuration": "ПОСЛЕДНЯЯ ДЛИТЕЛЬНОСТЬ",
+  "laborTimerFrequency": "ЧАСТОТА",
+
+  "laborHelpMessage": "🚨 {name}, ПОРА! \n\nНачались схватки. Я включаю Режим родов в приложении. Пожалуйста, будь готов! ❤️",
+  "@laborHelpMessage": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "errorNoHospitalAddress": "Адрес роддома не указан в настройках",
+  "errorNoDoctorPhone": "Телефон врача не указан в настройках",
+  "commonNext": "ДАЛЕЕ",
+  "onboardingNameTitle": "Как к вам обращаться?",
+  "jumpToWeek": "ПЕРЕЙТИ К НЕДЕЛЕ",
+  "growthSectionTitle": "Как развивается малыш",
+  "growthSectionSubtitle": "Плавный рост по неделям беременности",
+  "growthStage": "Этап {stage}",
+  "@growthStage": {
+    "placeholders": {
+      "stage": {
+        "type": "int"
+      }
+    }
+  }
+}
