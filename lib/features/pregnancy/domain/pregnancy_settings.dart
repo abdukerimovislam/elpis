@@ -11,7 +11,8 @@ class PregnancySettings {
   Id id = Isar.autoIncrement;
 
   DateTime estimatedDueDate;
-  String? babyName;
+  String? babyName;  // Имя малыша (от мамы)
+  String? momName;   // Имя мамы
 
   double? prePregnancyWeightKg;
   double? heightCm;
@@ -28,9 +29,14 @@ class PregnancySettings {
   String? doctorPhone;
   String? hospitalAddress;
 
+  bool notifyWeekly;
+  bool notifyVitamins;
+  bool notifyWater;
+
   PregnancySettings({
     required this.estimatedDueDate,
     this.babyName,
+    this.momName,
     this.prePregnancyWeightKg,
     this.heightCm,
     this.languageCode = 'en',
@@ -44,11 +50,15 @@ class PregnancySettings {
     this.partnerPhone,
     this.doctorPhone,
     this.hospitalAddress,
+    this.notifyWeekly = true,
+    this.notifyVitamins = true,
+    this.notifyWater = true,
   });
 
   PregnancySettings copyWith({
     DateTime? estimatedDueDate,
     String? babyName,
+    String? momName,
     double? prePregnancyWeightKg,
     double? heightCm,
     String? languageCode,
@@ -61,10 +71,14 @@ class PregnancySettings {
     String? partnerPhone,
     String? doctorPhone,
     String? hospitalAddress,
+    bool? notifyWeekly,
+    bool? notifyVitamins,
+    bool? notifyWater,
   }) {
     final newSettings = PregnancySettings(
       estimatedDueDate: estimatedDueDate ?? this.estimatedDueDate,
       babyName: babyName ?? this.babyName,
+      momName: momName ?? this.momName,
       prePregnancyWeightKg: prePregnancyWeightKg ?? this.prePregnancyWeightKg,
       heightCm: heightCm ?? this.heightCm,
       languageCode: languageCode ?? this.languageCode,
@@ -77,6 +91,9 @@ class PregnancySettings {
       partnerPhone: partnerPhone ?? this.partnerPhone,
       doctorPhone: doctorPhone ?? this.doctorPhone,
       hospitalAddress: hospitalAddress ?? this.hospitalAddress,
+      notifyWeekly: notifyWeekly ?? this.notifyWeekly,
+      notifyVitamins: notifyVitamins ?? this.notifyVitamins,
+      notifyWater: notifyWater ?? this.notifyWater,
     );
     newSettings.id = id;
     return newSettings;

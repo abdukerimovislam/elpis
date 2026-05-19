@@ -3,27 +3,33 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../l10n/app_localizations.dart'; // <--- ИМПОРТ L10N
 
 import '../data/checklist_item.dart';
-import '../../../main.dart';
+import '../../pregnancy/data/pregnancy_repository.dart';
 
 part 'checklist_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 ChecklistRepository checklistRepository(ChecklistRepositoryRef ref) {
-  return ChecklistRepository(isarInstance);
+  return ChecklistRepository(ref.watch(isarDatabaseProvider).valueOrNull);
 }
 
 class ChecklistRepository {
-  final Isar _isar;
+  final Isar? _isar;
 
   ChecklistRepository(this._isar);
 
   // Получить все элементы
   Stream<List<ChecklistItem>> watchItems() {
+    if (_isar == null) {
+      return Stream.value(const []);
+    }
     return _isar.checklistItems.where().watch(fireImmediately: true);
   }
 
   // Переключить галочку
   Future<void> toggleItem(int id) async {
+    if (_isar == null) {
+      return;
+    }
     await _isar.writeTxn(() async {
       final item = await _isar.checklistItems.get(id);
       if (item != null) {
@@ -36,6 +42,9 @@ class ChecklistRepository {
   // Инициализация (Заполняем базу, если пусто)
   // ТЕПЕРЬ ПРИНИМАЕМ l10n
   Future<void> ensureInitialized(AppLocalizations l10n) async {
+    if (_isar == null) {
+      return;
+    }
     final count = await _isar.checklistItems.count();
     if (count == 0) {
       // Генерируем список на основе текущего языка

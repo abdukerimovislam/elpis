@@ -15,7 +15,7 @@ class WeekPickerSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsStream =
         ref.watch(pregnancyRepositoryProvider).watchSettings();
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
@@ -39,7 +39,7 @@ class WeekPickerSheet extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(
-              l10n?.jumpToWeek ?? "JUMP TO WEEK",
+              l10n.jumpToWeek,
               style: const TextStyle(
                   fontWeight: FontWeight.bold, letterSpacing: 1.5),
             ),
@@ -66,7 +66,7 @@ class WeekPickerSheet extends ConsumerWidget {
                         week: week,
                         isSelected: isSelected,
                         visualModeKey: visualModeKey,
-                        weekLabel: l10n?.weekLabel(week) ?? "Week $week",
+                        weekLabel: l10n.weekLabel(week),
                         onTap: () => Navigator.pop(context, week),
                       ),
                     );

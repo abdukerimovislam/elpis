@@ -36,7 +36,8 @@ class _FetalGrowthSectionState extends State<FetalGrowthSection> {
 
     final data = FetalGrowthMapper.forWeek(widget.week);
     final safeWeek = widget.week.clamp(1, 40);
-    final imageHeight = 220 + (data.overallProgress * 72);
+    // Увеличиваем размер в 1.8 раза, чтобы помещалась только половина
+    final imageHeight = (220 + (data.overallProgress * 72)) * 1.8;
     final haloOpacity = 0.08 + (data.overallProgress * 0.16);
     final tilt = -0.04 + (data.weekProgress * 0.08);
     final direction = _weekTransitionDirection.toDouble();
@@ -101,9 +102,11 @@ class _FetalGrowthSectionState extends State<FetalGrowthSection> {
                 stops: const [0.0, 0.55, 1.0],
               ),
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -144,8 +147,12 @@ class _FetalGrowthSectionState extends State<FetalGrowthSection> {
                   curve: Curves.easeOutCubic,
                   builder: (context, t, child) {
                     final imageSlideX = (1 - t) * 24 * direction;
-                    final imageSlideY = data.yOffset + (1 - t) * 14;
                     final backdropSlideX = (1 - t) * -14 * direction;
+                    
+                    // Сдвигаем малыша немного в сторону и вниз, чтобы он выглядывал из-за края
+                    final imageSlideY = data.yOffset + 40 + (1 - t) * 14; 
+                    final imageSlideXWithOffset = imageSlideX + 50; 
+                    
                     final animatedScale = data.scale * (0.9 + (t * 0.1));
                     final animatedRotation =
                         tilt + ((1 - t) * -0.06 * direction);
@@ -180,7 +187,7 @@ class _FetalGrowthSectionState extends State<FetalGrowthSection> {
                           ),
                         ),
                         Transform.translate(
-                          offset: Offset(imageSlideX, imageSlideY),
+                          offset: Offset(imageSlideXWithOffset, imageSlideY),
                           child: Opacity(
                             opacity: 0.2 + (t * 0.8),
                             child: Transform.rotate(
@@ -202,6 +209,7 @@ class _FetalGrowthSectionState extends State<FetalGrowthSection> {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ],

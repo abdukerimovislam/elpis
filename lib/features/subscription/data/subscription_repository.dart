@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'subscription_repository.g.dart';
 
@@ -9,11 +11,20 @@ SubscriptionRepository subscriptionRepository(SubscriptionRepositoryRef ref) {
   return SubscriptionRepository();
 }
 
+final isProProvider = StreamProvider<bool>((ref) {
+  return ref.watch(subscriptionRepositoryProvider).isProStream;
+});
+
 class SubscriptionRepository {
   static const String _apiKeyIOS = 'appl_YOUR_KEY';
   static const String _apiKeyAndroid = 'goog_YOUR_KEY';
   static const String _placeholderIosKey = 'appl_YOUR_KEY';
   static const String _placeholderAndroidKey = 'goog_YOUR_KEY';
+
+  final _isProController = StreamController<bool>.broadcast();
+  Stream<bool> get isProStream => _isProController.stream;
+
+  bool _isProCached = false;
 
   bool get _isConfigured {
     if (kIsWeb) return false;
@@ -42,10 +53,35 @@ class SubscriptionRepository {
   }
 
   Future<void> init() async {
+    // 1. Быстрая загрузка из кэша (ОФФЛАЙН ДОСТУП)
+    final prefs = await SharedPreferences.getInstance();
+    _isProCached = prefs.getBool('is_pro_cached') ?? false;
+    _isProController.add(_isProCached);
+
     final apiKey = _activeApiKey;
     if (apiKey == null) return;
 
     await Purchases.configure(PurchasesConfiguration(apiKey));
+
+    // 2. Асинхронное обновление с сервера (если есть интернет)
+    checkSubscriptionStatus().then((isActive) {
+      if (_isProCached != isActive) {
+        _isProCached = isActive;
+        _isProController.add(isActive);
+        prefs.setBool('is_pro_cached', isActive);
+      }
+    });
+
+    // 3. Подписка на изменения (когда юзер покупает снаружи или подписка слетает)
+    Purchases.addCustomerInfoUpdateListener((info) async {
+      final isActive = info.entitlements.all['premium']?.isActive ?? false;
+      if (_isProCached != isActive) {
+        _isProCached = isActive;
+        _isProController.add(isActive);
+        final p = await SharedPreferences.getInstance();
+        p.setBool('is_pro_cached', isActive);
+      }
+    });
   }
 
   /// Получение товаров (Возвращаем пустоту пока нет мерчанта)

@@ -29,15 +29,13 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
   Widget build(BuildContext context) {
     // 1. Get Localization & Theme
     final l10n = AppLocalizations.of(context)!;
-    final locale = Localizations.localeOf(context).languageCode;
-
     final theme = Theme.of(context);
     final scaffoldBg = theme.scaffoldBackgroundColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-    final cardColor = theme.cardColor;
+    final primaryColor = theme.primaryColor;
 
     final repository = ref.read(symptomsRepositoryProvider);
-    final symptoms = repository.search(_query, locale);
+    final symptoms = repository.search(_query, l10n);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -99,21 +97,47 @@ class _IsItNormalSheetState extends ConsumerState<IsItNormalSheet> {
           // Search Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (val) => setState(() => _query = val),
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: l10n.normalSearchHint,
-                hintStyle: TextStyle(color: mutedColor.withValues(alpha: 0.5)),
-                prefixIcon: Icon(Icons.search, color: mutedColor),
-                filled: true,
-                fillColor: cardColor, // Dynamic card color
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  )
+                ],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) => setState(() => _query = val),
+                style: theme.textTheme.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: l10n.normalSearchHint,
+                  hintStyle:
+                      TextStyle(color: mutedColor.withValues(alpha: 0.5)),
+                  prefixIcon: Icon(Icons.search_rounded, color: primaryColor),
+                  filled: true,
+                  fillColor: theme.brightness == Brightness.dark
+                      ? const Color(0xFF1E1E1E)
+                      : Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        BorderSide(color: mutedColor.withValues(alpha: 0.1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        BorderSide(color: mutedColor.withValues(alpha: 0.1)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        BorderSide(color: primaryColor.withValues(alpha: 0.5)),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
           ),
@@ -149,7 +173,6 @@ class _SymptomCard extends StatelessWidget {
 
     // Theme
     final theme = Theme.of(context);
-    final cardColor = theme.cardColor;
     final mainTextColor = theme.textTheme.bodyLarge?.color ?? Colors.black;
 
     final statusColor = _getStatusColor(symptom.severity, theme);
@@ -161,14 +184,17 @@ class _SymptomCard extends StatelessWidget {
         _showDetail(context);
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(20),
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1E1E1E)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: statusColor.withValues(alpha: 0.1)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
+                color: statusColor.withValues(alpha: 0.05),
+                blurRadius: 15,
                 offset: const Offset(0, 4))
           ],
         ),

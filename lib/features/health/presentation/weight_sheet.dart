@@ -32,7 +32,9 @@ class _WeightSheetState extends ConsumerState<WeightSheet> {
 
   Future<void> _loadInitialData() async {
     final repo = ref.read(pregnancyRepositoryProvider);
-    final settings = await repo.watchSettings().first;
+    // ✅ ИСПРАВЛЕНО: Используем getSettings() вместо watchSettings().first.
+    // watchSettings().first могло зависнуть навсегда если Isar не открылся.
+    final settings = await repo.getSettings();
 
     if (settings != null) {
       _startWeight = settings.prePregnancyWeightKg;
@@ -99,6 +101,79 @@ class _WeightSheetState extends ConsumerState<WeightSheet> {
       );
       setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _openPersonalizeDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final bgColor = theme.scaffoldBackgroundColor;
+    final primaryColor = theme.primaryColor;
+
+    final weightController =
+        TextEditingController(text: _startWeight?.toStringAsFixed(1) ?? '');
+    final heightController =
+        TextEditingController(text: _height?.toStringAsFixed(0) ?? '');
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: bgColor,
+        title: Text(l10n.weightPersonalizeTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: heightController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.weightHeightLabel,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: weightController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: l10n.weightPrePregnancyLabel,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.commonCancel,
+                style: const TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final h =
+                  double.tryParse(heightController.text.replaceAll(',', '.'));
+              final w =
+                  double.tryParse(weightController.text.replaceAll(',', '.'));
+              if (h != null && w != null && h > 100 && w > 30) {
+                await ref.read(pregnancyRepositoryProvider).updateSettings(
+                      height: h,
+                      prePregnancyWeight: w,
+                    );
+                if (!mounted || !ctx.mounted) return;
+                Navigator.pop(ctx);
+                _loadInitialData(); // Reload UI
+              }
+            },
+            child: Text(l10n.commonSave,
+                style: TextStyle(
+                    color: primaryColor, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -170,12 +245,53 @@ class _WeightSheetState extends ConsumerState<WeightSheet> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(
-                        _currentWeight.toStringAsFixed(1),
-                        style: theme.textTheme.displayLarge?.copyWith(
-                          fontSize: 72,
-                          color: mainTextColor,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () async {
+                          final controller = TextEditingController(
+                              text: _currentWeight.toStringAsFixed(1));
+                          final newWeight = await showDialog<double>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                      backgroundColor: bgColor,
+                                      title: Text(l10n.weightTitle),
+                                      content: TextField(
+                                        controller: controller,
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        autofocus: true,
+                                        style: const TextStyle(fontSize: 24),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () => Navigator.pop(ctx),
+                                            child: Text(l10n.commonCancel,
+                                                style: TextStyle(
+                                                    color: mutedColor))),
+                                        TextButton(
+                                            onPressed: () => Navigator.pop(
+                                                ctx,
+                                                double.tryParse(controller.text
+                                                    .replaceAll(',', '.'))),
+                                            child: Text(l10n.commonSave,
+                                                style: TextStyle(
+                                                    color: primaryColor))),
+                                      ]));
+                          if (newWeight != null &&
+                              newWeight >= 30 &&
+                              newWeight <= 200) {
+                            setState(() => _currentWeight = newWeight);
+                          }
+                        },
+                        child: Text(
+                          _currentWeight.toStringAsFixed(1),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 72,
+                            color: mainTextColor,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            decorationColor: mutedColor.withValues(alpha: 0.3),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -200,27 +316,171 @@ class _WeightSheetState extends ConsumerState<WeightSheet> {
                   ),
                   Icon(Icons.arrow_drop_up, size: 40, color: primaryColor),
                   const SizedBox(height: 24),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.insights, color: feedbackColor),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            feedback,
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontSize: 14),
+
+                  // Total Gain & Range Info Card
+                  if (_startWeight != null && _height != null) ...[
+                    Builder(builder: (context) {
+                      final gain = _currentWeight - _startWeight!;
+                      final bmi = WeightCalculator.calculateBMI(
+                          _startWeight!, _height!);
+                      final range =
+                          WeightCalculator.getRangeForWeek(bmi, _currentWeek);
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              primaryColor.withValues(alpha: 0.1),
+                              primaryColor.withValues(alpha: 0.02),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color: primaryColor.withValues(alpha: 0.2)),
                         ),
-                      ],
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(l10n.weightTotalGain,
+                                        style: TextStyle(
+                                            color: mutedColor,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${gain > 0 ? '+' : ''}${gain.toStringAsFixed(1)} ${l10n.weightUnit}',
+                                      style: TextStyle(
+                                          color: mainTextColor,
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w800),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: primaryColor.withValues(alpha: 0.2),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(l10n.weightRecommended,
+                                        style: TextStyle(
+                                            color: mutedColor,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${range.min.toStringAsFixed(1)} - ${range.max.toStringAsFixed(1)} ${l10n.weightUnit}',
+                                      style: TextStyle(
+                                          color: primaryColor,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.insights_rounded,
+                                      color: feedbackColor, size: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      feedback,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(fontSize: 13, height: 1.3),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    GestureDetector(
+                      onTap: _openPersonalizeDialog,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.grey.withValues(alpha: 0.1),
+                              Colors.grey.withValues(alpha: 0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                              color: Colors.grey.withValues(alpha: 0.2),
+                              width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                      color:
+                                          Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4)),
+                                ],
+                              ),
+                              child: Icon(Icons.settings_suggest_rounded,
+                                  color: primaryColor),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.weightPersonalizeTitle,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: mainTextColor),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    l10n.weightPersonalizeDesc,
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: mutedColor,
+                                        height: 1.3),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
+
                   const SizedBox(height: 40),
                   if (_history.length > 1) ...[
                     Padding(
@@ -277,22 +537,77 @@ class _WeightSheetState extends ConsumerState<WeightSheet> {
                         color: mutedColor.withValues(alpha: 0.1),
                       ),
                       itemBuilder: (context, index) {
-                        final item = _history[_history.length - 1 - index];
+                        final currentIdx = _history.length - 1 - index;
+                        final item = _history[currentIdx];
+
+                        double? delta;
+                        if (currentIdx > 0 &&
+                            _history[currentIdx - 1].weightKg != null &&
+                            item.weightKg != null) {
+                          delta = item.weightKg! -
+                              _history[currentIdx - 1].weightKg!;
+                        }
+
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                DateFormat.yMMMd().format(item.date),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: mutedColor,
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: theme
+                                      .colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
                                 ),
+                                child: Icon(Icons.monitor_weight_outlined,
+                                    size: 18, color: mutedColor),
                               ),
+                              const SizedBox(width: 16),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    DateFormat.yMMMd().format(item.date),
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  if (delta != null && delta != 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            delta > 0
+                                                ? Icons.trending_up
+                                                : Icons.trending_down,
+                                            size: 12,
+                                            color: delta > 0
+                                                ? Colors.orange
+                                                : Colors.green,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)} ${l10n.weightUnit}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: delta > 0
+                                                  ? Colors.orange
+                                                  : Colors.green,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const Spacer(),
                               Text(
                                 '${item.weightKg?.toStringAsFixed(1)} ${l10n.weightUnit}',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 18,
                                   color: mainTextColor,
                                 ),
                               ),
@@ -542,10 +857,11 @@ class _SimpleCurvePainter extends CustomPainter {
             (data[index - 1].date.millisecondsSinceEpoch - minTime) /
                 (maxTime - minTime) *
                 size.width;
+        // ✅ ИСПРАВЛЕНО: Проверяем null у предыдущей записи перед force unwrap
+        final prevWeight = data[index - 1].weightKg;
+        if (prevWeight == null) continue;
         final previousY = size.height -
-            ((data[index - 1].weightKg! - minWeight) /
-                (maxWeight - minWeight) *
-                size.height);
+            ((prevWeight - minWeight) / (maxWeight - minWeight) * size.height);
 
         final cp1x = previousX + (x - previousX) / 2;
         final cp2x = previousX + (x - previousX) / 2;

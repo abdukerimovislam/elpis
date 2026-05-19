@@ -1,10 +1,10 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../pregnancy/domain/insight.dart';
-import '../../pregnancy/domain/pregnancy_settings.dart';
+import 'dart:ui';
 
-// ИМПОРТЫ ДАННЫХ
-import 'locales/ru_insights.dart';
-import 'locales/en_insights.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../../../l10n/app_localizations.dart';
+import '../../pregnancy/domain/insight.dart';
+import 'localized_insight_content.dart';
 
 part 'insight_repository.g.dart';
 
@@ -14,122 +14,102 @@ InsightRepository insightRepository(InsightRepositoryRef ref) {
 }
 
 class InsightRepository {
-  static const Map<String, Map<int, Map<String, dynamic>>> _dataRegistry = {
-    'ru': ruInsightsData,
-    'en': enInsightsData,
-  };
-
-  // 🔥 ЭКСКЛЮЗИВНЫЕ ДАННЫЕ ДЛЯ РАННИХ НЕДЕЛЬ (Зашиты в код)
-  static const Map<String, Map<int, Map<String, String>>> _earlyWeeksData = {
-    'ru': {
-      1: {
-        'title': 'Начало цикла',
-        'description': 'Ваш организм готовится к возможному чуду.'
-      },
-      2: {
-        'title': 'Овуляция',
-        'description': 'Самый важный момент для зарождения новой жизни.'
-      },
-      3: {
-        'title': 'Зачатие',
-        'description': 'Маленькая клетка начинает свое большое путешествие.'
-      },
-    },
-    'en': {
-      1: {
-        'title': 'Cycle Start',
-        'description': 'Your body is preparing for a possible miracle.'
-      },
-      2: {
-        'title': 'Ovulation',
-        'description': 'The crucial moment for creating new life.'
-      },
-      3: {
-        'title': 'Conception',
-        'description': 'A tiny cell begins its big journey.'
-      },
-    }
-  };
-
   String _normalizeLocale(String code) {
     if (code.contains('_')) return code.split('_')[0].toLowerCase();
     if (code.contains('-')) return code.split('-')[0].toLowerCase();
     return code.toLowerCase();
   }
 
-  // Хелпер: Картинки берем от 4-й недели, если срок меньше
-  // 1. Метод для СФЕРЫ (Заголовки и описания)
-  ({String title, String description}) getObjectData(
-      int week, String languageCode, String visualModeKey) {
-    final normalizedLang = _normalizeLocale(languageCode);
+  AppLocalizations _l10nFor(String languageCode) {
+    return lookupAppLocalizations(Locale(_normalizeLocale(languageCode)));
+  }
 
-    // --- ЛОГИКА 1: РАННИЕ НЕДЕЛИ (1-3) ---
-    if (week < 4) {
-      // Пытаемся найти специальный текст для 1-3 недели
-      final specificData = _earlyWeeksData[normalizedLang]?[week] ??
-          _earlyWeeksData['en']?[week];
-
-      if (specificData != null) {
+  ({String title, String description})? _earlyWeekData(
+    int week,
+    AppLocalizations l10n,
+  ) {
+    switch (week) {
+      case 1:
         return (
-          title: specificData['title']!,
-          description: specificData['description']!
+          title: l10n.earlyWeek1Title,
+          description: l10n.earlyWeek1Description,
         );
+      case 2:
+        return (
+          title: l10n.earlyWeek2Title,
+          description: l10n.earlyWeek2Description,
+        );
+      case 3:
+        return (
+          title: l10n.earlyWeek3Title,
+          description: l10n.earlyWeek3Description,
+        );
+      default:
+        return null;
+    }
+  }
+
+  ({String title, String description}) getObjectData(
+    int week,
+    String languageCode,
+    String visualModeKey,
+  ) {
+    final l10n = _l10nFor(languageCode);
+
+    if (week < 4) {
+      final specificData = _earlyWeekData(week, l10n);
+      if (specificData != null) {
+        return specificData;
       }
     }
 
-    // --- ЛОГИКА 2: ОБЫЧНЫЕ НЕДЕЛИ (4-42) ---
-    final dataMap = _dataRegistry[normalizedLang] ?? enInsightsData;
-
-    // Для 41-42 недели берем данные 40-й
     final safeWeek = week > 40 ? 40 : week;
+    final weekData = localizedInsightKeyData[safeWeek];
 
-    if (dataMap.containsKey(safeWeek)) {
-      final weekData = dataMap[safeWeek]!;
-
-      final useFruit = visualModeKey == PregnancySettings.visualModeFruit;
-      final modeKey = useFruit ? 'fruit' : 'realistic';
-      final fallbackKey = useFruit ? 'realistic' : 'fruit';
-
+    if (weekData != null) {
+      final modeKey = visualModeKey;
+      const fallbackKey = 'fruit';
       final obj =
-          (weekData[modeKey] ?? weekData[fallbackKey]) as Map<String, String>;
+          (weekData[modeKey] ?? weekData[fallbackKey]) as Map<String, dynamic>?;
 
-      return (title: obj['title'] ?? "", description: obj['description'] ?? "");
+      return (
+        title: resolveInsightText(l10n, obj?['title']?.toString() ?? ''),
+        description:
+            resolveInsightText(l10n, obj?['description']?.toString() ?? ''),
+      );
     }
 
-    // Заглушка, если ничего не нашлось
-    return normalizedLang == 'ru'
-        ? (title: "Загрузка...", description: "Данные обновляются")
-        : (title: "Loading...", description: "Updating data");
+    return (
+      title: l10n.loadingTitle,
+      description: l10n.updatingData,
+    );
   }
 
-  // 2. Метод для ЛЕНТЫ ИНСАЙТОВ
   List<Insight> getInsightsForWeek(int week, String languageCode) {
-    final normalizedLang = _normalizeLocale(languageCode);
-    final dataMap = _dataRegistry[normalizedLang] ?? enInsightsData;
-
-    // Для 1-3 недели можем показывать инсайты от 4-й (общие советы про витамины)
-    // Или возвращать пустой список, если не хотим путать маму.
-    // Решение: Берем от 4-й, так как там про фолиевую кислоту - это актуально всегда.
+    final l10n = _l10nFor(languageCode);
     final safeWeek = week < 4 ? 4 : (week > 40 ? 40 : week);
+    final weekData = localizedInsightKeyData[safeWeek];
 
-    if (dataMap.containsKey(safeWeek)) {
-      final weekData = dataMap[safeWeek]!;
-
-      final rawInsights = weekData['insights'];
-      if (rawInsights is! List) return [];
-
-      return rawInsights.map((map) {
-        final m = map as Map<String, dynamic>;
-        return Insight(
-          id: "${week}_${m['title'].hashCode}",
-          type: _parseType(m['type'] as String? ?? 'body'),
-          title: m['title'] as String? ?? "",
-          content: m['content'] as String? ?? "",
-          iconName: m['icon'] as String? ?? 'info',
-        );
-      }).toList();
+    if (weekData == null) {
+      return [];
     }
-    return [];
+
+    final rawInsights = weekData['insights'];
+    if (rawInsights is! List) {
+      return [];
+    }
+
+    return rawInsights.map((map) {
+      final m = map as Map<String, dynamic>;
+      final title = resolveInsightText(l10n, m['title'] as String? ?? '');
+      return Insight(
+        id: '${safeWeek}_${title.hashCode}',
+        type: _parseType(m['type'] as String? ?? 'body'),
+        title: title,
+        content: resolveInsightText(l10n, m['content'] as String? ?? ''),
+        iconName: m['icon'] as String? ?? 'info',
+      );
+    }).toList();
   }
 
   InsightType _parseType(String type) {
@@ -145,5 +125,29 @@ class InsightRepository {
       default:
         return InsightType.body;
     }
+  }
+
+  WeekDetail getWeekDetail(int week, String languageCode) {
+    final l10n = _l10nFor(languageCode);
+    final safeWeek = week < 4 ? 4 : (week > 40 ? 40 : week);
+    final weekData = localizedInsightKeyData[safeWeek];
+
+    if (weekData != null) {
+      final milestoneKey = weekData['milestone'] as String?;
+      return WeekDetail(
+        babyDev: resolveInsightText(l10n, weekData['babyDev'] as String? ?? ''),
+        momBody: resolveInsightText(l10n, weekData['momBody'] as String? ?? ''),
+        tip: resolveInsightText(l10n, weekData['tip'] as String? ?? ''),
+        milestone: milestoneKey == null
+            ? null
+            : resolveInsightText(l10n, milestoneKey),
+      );
+    }
+
+    return WeekDetail(
+      babyDev: l10n.weekDetailBabyActive,
+      momBody: l10n.weekDetailBodyChanging,
+      tip: l10n.weekDetailRest,
+    );
   }
 }

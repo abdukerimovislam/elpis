@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'subscription_repository.dart'; // Убедись, что путь правильный к абстрактному репозиторию
+import 'subscription_repository.dart';
 
 class MockSubscriptionRepository implements SubscriptionRepository {
   bool _isPremium = false;
+  final _isProController = StreamController<bool>.broadcast();
+
+  @override
+  Stream<bool> get isProStream => _isProController.stream;
 
   @override
   Future<void> init() async {
@@ -20,9 +25,9 @@ class MockSubscriptionRepository implements SubscriptionRepository {
 
   @override
   Future<bool> purchasePackage(Package package) async {
-    // В моке мы игнорируем сам пакет
     await Future.delayed(const Duration(seconds: 2));
     _isPremium = true;
+    _isProController.add(true);
     debugPrint("MOCK: Purchase successful. User is now Premium.");
     return true;
   }
@@ -31,6 +36,7 @@ class MockSubscriptionRepository implements SubscriptionRepository {
   Future<bool> restorePurchases() async {
     await Future.delayed(const Duration(seconds: 1));
     _isPremium = true;
+    _isProController.add(true);
     debugPrint("MOCK: Restore successful.");
     return true;
   }

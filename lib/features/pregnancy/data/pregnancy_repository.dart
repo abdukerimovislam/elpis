@@ -1,6 +1,5 @@
-import 'package:flutter/foundation.dart'; // Для debugPrint
+import 'package:flutter/foundation.dart'; // Для debugPrint и kDebugMode
 import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 // ИМПОРТЫ МОДЕЛЕЙ
@@ -13,37 +12,34 @@ import '../../health/domain/doctor_visit.dart';
 import '../../family/domain/baby_name.dart';
 import '../../family/domain/bump_snapshot.dart';
 
+import '../../../core/notifications/notification_service.dart';
+import '../../auth/data/auth_session_repository.dart';
+import '../../auth/data/workspace_manager.dart';
+
 part 'pregnancy_repository.g.dart';
 
 @Riverpod(keepAlive: true)
 Future<Isar> isarDatabase(IsarDatabaseRef ref) async {
-  final dir = await getApplicationDocumentsDirectory();
+  await ref.watch(authBootstrapProvider.future);
+  final session = await ref.watch(authSessionProvider.future);
+  final workspaceManager = ref.watch(workspaceManagerProvider);
 
-  return Isar.open(
-    [
-      WeekSnapshotSchema,
-      PregnancySettingsSchema,
-      HealthRecordSchema,
-      ContractionSchema,
-      ChecklistItemSchema,
-      DoctorVisitSchema,
-      BabyNameSchema,
-      BumpSnapshotSchema,
-    ],
-    directory: dir.path,
-    inspector: true,
-  );
+  return workspaceManager.openWorkspace(session.workspaceKey);
 }
 
 @Riverpod(keepAlive: true)
 PregnancyRepository pregnancyRepository(PregnancyRepositoryRef ref) {
-  return PregnancyRepository(ref.watch(isarDatabaseProvider).requireValue);
+  return PregnancyRepository(
+    ref.watch(isarDatabaseProvider).requireValue,
+    ref.read(notificationServiceProvider),
+  );
 }
 
 class PregnancyRepository {
   final Isar _isar;
+  final NotificationService _notificationService;
 
-  PregnancyRepository(this._isar);
+  PregnancyRepository(this._isar, this._notificationService);
 
   // -------------------------------------------------------
   // ---🛡️ SAFETY WRAPPER (ЗАЩИТА ОТ ПАДЕНИЙ) ---
@@ -90,6 +86,7 @@ class PregnancyRepository {
   /// ОБНОВЛЕННЫЙ МЕТОД: Теперь принимает поля для Labor Mode
   Future<void> updateSettings({
     String? name,
+    String? momName,
     DateTime? dueDate,
     double? prePregnancyWeight,
     double? height,
@@ -99,17 +96,22 @@ class PregnancyRepository {
     String? themeKey,
     // --- Поля родов ---
     bool? isLaborMode,
-    bool? showLaborButton, // <-- НОВЫЙ АРГУМЕНТ
+    bool? showLaborButton,
     String? partnerName,
     String? partnerPhone,
     String? doctorPhone,
     String? hospitalAddress,
+    // --- Notification Toggles ---
+    bool? notifyWeekly,
+    bool? notifyVitamins,
+    bool? notifyWater,
   }) async {
     await _safeWrite(() async {
       final settings = await _isar.pregnancySettings.where().findFirst();
 
       if (settings != null) {
         if (name != null) settings.babyName = name;
+        if (momName != null) settings.momName = momName;
         if (dueDate != null) settings.estimatedDueDate = dueDate;
         if (prePregnancyWeight != null) {
           settings.prePregnancyWeightKg = prePregnancyWeight;
@@ -139,12 +141,17 @@ class PregnancyRepository {
         if (doctorPhone != null) settings.doctorPhone = doctorPhone;
         if (hospitalAddress != null) settings.hospitalAddress = hospitalAddress;
 
+        if (notifyWeekly != null) settings.notifyWeekly = notifyWeekly;
+        if (notifyVitamins != null) settings.notifyVitamins = notifyVitamins;
+        if (notifyWater != null) settings.notifyWater = notifyWater;
+
         await _isar.pregnancySettings.put(settings);
       } else {
         final newSettings = PregnancySettings(
           estimatedDueDate:
               dueDate ?? DateTime.now().add(const Duration(days: 280)),
           babyName: name,
+          momName: momName,
           prePregnancyWeightKg: prePregnancyWeight,
           heightCm: height,
           languageCode: languageCode ?? 'en',
@@ -160,10 +167,20 @@ class PregnancyRepository {
           partnerPhone: partnerPhone,
           doctorPhone: doctorPhone,
           hospitalAddress: hospitalAddress,
+          notifyWeekly: notifyWeekly ?? true,
+          notifyVitamins: notifyVitamins ?? true,
+          notifyWater: notifyWater ?? true,
         );
         await _isar.pregnancySettings.put(newSettings);
       }
     });
+
+    // Schedule notifications if settings changed
+    final currentSettings = await getSettings();
+    if (currentSettings != null) {
+      await _notificationService.schedulePregnancyUpdates(currentSettings);
+      await _notificationService.scheduleDailyHabits(currentSettings);
+    }
   }
 
   Future<int?> getCurrentWeek() async {
@@ -193,6 +210,13 @@ class PregnancyRepository {
     if (existing != null) return existing;
     return WeekSnapshot(week: week);
   }
+
+  Future<String?> getBabyLetter(int week) async {
+    final snapshot = await _isar.weekSnapshots.filter().weekEqualTo(week).findFirst();
+    return snapshot?.letterToBaby;
+  }
+  
+  Future<void> saveBabyLetter(int week, String letter) => saveLetter(week, letter);
 
   Future<void> saveLetter(int week, String letter) async {
     await _safeWrite(() async {
@@ -355,6 +379,7 @@ class PregnancyRepository {
     await _safeWrite(() async {
       await _isar.clear(); // Полная очистка всей базы
     });
+    await _notificationService.cancelAllNotifications();
   }
 
   // -------------------------------------------------------

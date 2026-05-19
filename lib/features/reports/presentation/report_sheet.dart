@@ -125,7 +125,9 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
                               size: 48, color: Colors.red),
                           const SizedBox(height: 16),
                           Text(
-                            "Error generating report:\n${snapshot.error}",
+                            l10n.reportGenerationError(
+                              snapshot.error.toString(),
+                            ),
                             textAlign: TextAlign.center,
                             style: TextStyle(color: mutedColor),
                           ),
@@ -151,9 +153,8 @@ class _ReportSheetState extends ConsumerState<ReportSheet> {
                   scrollViewDecoration: BoxDecoration(
                     color: theme.scaffoldBackgroundColor,
                   ),
-                  // Ð˜Ð¼Ñ Ñ„Ð°Ð¹Ð»Ð° Ð¿Ñ€Ð¸ ÑÐºÑÐ¿Ð¾Ñ€Ñ‚Ðµ
                   pdfFileName:
-                      "Bloom_Report_${DateTime.now().millisecondsSinceEpoch}.pdf",
+                      '${l10n.pdfFilePrefix}_${DateTime.now().millisecondsSinceEpoch}.pdf',
                 );
               },
             ),

@@ -8,6 +8,7 @@ plugins {
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 fun localProperties(): Properties {
@@ -17,6 +18,17 @@ fun localProperties(): Properties {
         properties.load(localPropertiesFile.inputStream())
     }
     return properties
+}
+
+val releaseKeyPropertiesFile = rootProject.file("key.properties")
+val hasReleaseSigning = releaseKeyPropertiesFile.exists()
+val isReleaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val releaseKeyProperties = Properties().apply {
+    if (hasReleaseSigning) {
+        load(FileInputStream(releaseKeyPropertiesFile))
+    }
 }
 
 android {
@@ -52,16 +64,12 @@ android {
 
     // (Этот блок для подписи релиза)
     signingConfigs {
-        create("release") {
-            try {
-                val props = Properties()
-                props.load(FileInputStream(file("../key.properties")))
-                storeFile = file(props.getProperty("storeFile"))
-                storePassword = props.getProperty("storePassword")
-                keyAlias = props.getProperty("keyAlias")
-                keyPassword = props.getProperty("keyPassword")
-            } catch (e: java.io.FileNotFoundException) {
-                throw GradleException("Failed to read key.properties. Make sure the file is in the 'android' directory.", e)
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseKeyProperties.getProperty("storeFile"))
+                storePassword = releaseKeyProperties.getProperty("storePassword")
+                keyAlias = releaseKeyProperties.getProperty("keyAlias")
+                keyPassword = releaseKeyProperties.getProperty("keyPassword")
             }
         }
     }
@@ -74,9 +82,17 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
+}
+
+if (isReleaseTaskRequested && !hasReleaseSigning) {
+    throw GradleException(
+        "Release signing is not configured. Add android/key.properties and a keystore before building a release."
+    )
 }
 
 flutter {

@@ -8,8 +8,12 @@ import 'package:intl/intl.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../subscription/presentation/paywall_sheet.dart';
+import '../../subscription/data/subscription_repository.dart';
 import '../data/contraction_repository.dart';
 import '../domain/contraction.dart';
+import '../domain/contraction_pattern.dart';
+import '../data/pdf_export_service.dart';
 
 class ContractionTimerSheet extends ConsumerStatefulWidget {
   const ContractionTimerSheet({super.key});
@@ -61,6 +65,8 @@ class _ContractionTimerSheetState extends ConsumerState<ContractionTimerSheet>
 
   // Ð—Ð°Ð¿ÑƒÑÐº Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð° Ð¸ Ñ†Ð¸ÐºÐ»Ð° Ð´Ñ‹Ñ…Ð°Ð½Ð¸Ñ
   void _resumeTimer(Contraction c) {
+    _stopTimers(); // ИСПРАВЛЕНО: предотвращает дублирование таймеров
+
     setState(() {
       _activeContraction = c;
       _isInhaling = true;
@@ -169,20 +175,39 @@ class _ContractionTimerSheetState extends ConsumerState<ContractionTimerSheet>
   }
 
   bool _check511Rule(List<Contraction> history) {
-    if (history.length < 3) return false;
-    final recent = history.take(3).toList();
+    return matches511Rule(history);
+  }
 
-    bool durationCondition = recent
-        .every((c) => (c.endTime?.difference(c.startTime).inSeconds ?? 0) > 45);
+  Future<void> _generateAndSharePdf() async {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
 
-    bool intervalCondition = true;
-    for (int i = 0; i < recent.length - 1; i++) {
-      final diff =
-          recent[i].startTime.difference(recent[i + 1].startTime).inMinutes;
-      if (diff > 6 || diff < 3) intervalCondition = false;
+    // Показываем индикатор загрузки
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) =>
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
     }
 
-    return durationCondition && intervalCondition;
+    try {
+      await ref
+          .read(pdfExportServiceProvider)
+          .generateAndShareGeneralReport(context, l10n, locale);
+
+      if (mounted) {
+        Navigator.pop(context); // закрываем лоадер
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // закрываем лоадер
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.errorGeneric)),
+        );
+      }
+    }
   }
 
   @override
@@ -213,6 +238,26 @@ class _ContractionTimerSheetState extends ConsumerState<ContractionTimerSheet>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // Экспорт для врача (PRO)
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_outlined,
+                color: Colors.white70),
+            onPressed: () async {
+              final isPro = ref.read(isProProvider).valueOrNull ?? false;
+              if (isPro) {
+                HapticFeedback.lightImpact();
+                await _generateAndSharePdf();
+              } else {
+                HapticFeedback.selectionClick();
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const PaywallSheet(),
+                );
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white30),
             onPressed: _clearHistory,

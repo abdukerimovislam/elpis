@@ -1,119 +1,272 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class GlassSphere extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────
+// GlassSphere — «Живой жемчуг»
+//
+// Анимированная стеклянная сфера с тремя улучшениями:
+//  А) Переливающийся перламутровый ободок (SweepGradient, вращается)
+//  Б) Пульсирующее внешнее свечение (boxShadow меняет цвет)
+//  В) Динамический вторичный блик (цвет следует за ободком)
+//
+// Производительность: один AnimationController, один CustomPaint,
+// один drawCircle. Никакого BackdropFilter снаружи.
+// ─────────────────────────────────────────────────────────────────
+class GlassSphere extends StatefulWidget {
   final double size;
   final Widget child;
+  final List<Color>? pearlColors;
 
   const GlassSphere({
     super.key,
     required this.size,
     required this.child,
+    this.pearlColors,
   });
 
   @override
+  State<GlassSphere> createState() => _GlassSphereState();
+}
+
+class _GlassSphereState extends State<GlassSphere>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  // Жемчужная палитра: розовый → лиловый → голубой → персиковый → розовый
+  static const List<Color> _pearlColors = [
+    Color(0xFFFFB3C6), // нежная роза
+    Color(0xFFCDB4FF), // лиловый
+    Color(0xFFBDE0FF), // детский голубой
+    Color(0xFFFFCFD2), // блаш
+    Color(0xFFFFB3C6), // назад к розе (loop)
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Текущий жемчужный цвет по прогрессу t ∈ [0, 1].
+  Color _pearlColor(double t) {
+    final colors = widget.pearlColors ?? _pearlColors;
+    final segments = colors.length - 1;
+    final scaled = t * segments;
+    final i = scaled.floor().clamp(0, segments - 1);
+    return Color.lerp(colors[i], colors[i + 1], scaled - i)!;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Вычисляем размеры бликов относительно размера сферы
-    final double highlightSize = size * 0.35;
-    final double reflectionSize = size * 0.7;
+    final double highlightSize  = widget.size * 0.38;
+    final double secondarySize  = widget.size * 0.32;
 
-    return Container(
-      width: size,
-      height: size,
-      // Основная декорация самого пузыря
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        // Слой 1: Очень тонкая, слегка матовая граница пузыря
-        border: Border.all(
-          color: Colors.white.withOpacity(0.15),
-          width: 0.5,
-        ),
-        // Слой 2: Радужные переливы (Иризация)
-        // Используем RadialGradient, чтобы пустить цвета по краю
-        gradient: RadialGradient(
-          center: const Alignment(0, 0),
-          radius: 1.0,
-          colors: [
-            // Центр почти прозрачный
-            Colors.white.withOpacity(0.01),
-            // Ближе к краю появляются нежные оттенки
-            const Color(0xFFE0FFFF).withOpacity(0.05), // Бледно-циановый
-            const Color(0xFFFFE4E1).withOpacity(0.08), // Нежно-розовый
-            const Color(0xFFF0E68C).withOpacity(0.05), // Хаки/Золотистый
-            // Самый край с легким фиолетовым отливом
-            const Color(0xFFE6E6FA).withOpacity(0.12), // Лавандовый
+    return AnimatedBuilder(
+      animation: _controller,
+      // child НЕ перестраивается на каждом кадре — Flutter кешируует его
+      child: widget.child,
+      builder: (context, child) {
+        final t = _controller.value;
+        final pearl = _pearlColor(t);
+        final pearlSoft = pearl.withValues(alpha: 0.28);
+
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // ── А. Внешнее пульсирующее свечение ──────────────────
+            Container(
+              width: widget.size + 6,
+              height: widget.size + 6,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  // Близкое мягкое свечение (pearl-цвет)
+                  BoxShadow(
+                    color: pearlSoft,
+                    blurRadius: 22,
+                    spreadRadius: 0,
+                  ),
+                  // Дальнее разлитое свечение
+                  BoxShadow(
+                    color: pearl.withValues(alpha: 0.10),
+                    blurRadius: 48,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Б. Переливающийся ободок (SweepGradient вращается) ─
+            CustomPaint(
+              size: Size(widget.size, widget.size),
+              painter: _PearlBorderPainter(
+                t: t,
+                colors: widget.pearlColors ?? _pearlColors,
+              ),
+            ),
+
+            // ── Основная сфера ─────────────────────────────────────
+            Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // Тонкая белая граница поверх ободка
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  width: 0.5,
+                ),
+                // Радужный радиальный градиент: ярче, чем раньше
+                gradient: RadialGradient(
+                  center: const Alignment(0.0, 0.0),
+                  radius: 1.0,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.01),
+                    const Color(0xFFE0FFFF).withValues(alpha: 0.06),
+                    pearl.withValues(alpha: 0.09),       // динамический!
+                    const Color(0xFFE6E6FA).withValues(alpha: 0.16),
+                  ],
+                  stops: const [0.55, 0.78, 0.91, 1.0],
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Контент сферы (ребёнок, фрукт, анимации)
+                  // Лёгкое размытие имитирует преломление в стекле
+                  ClipOval(
+                    child: ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
+                      child: child,
+                    ),
+                  ),
+
+                  // ── В. Главный блик — верхний левый ───────────────
+                  Positioned(
+                    top: widget.size * 0.06,
+                    left: widget.size * 0.10,
+                    child: Container(
+                      width: highlightSize,
+                      height: highlightSize * 0.55,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(widget.size),
+                        gradient: RadialGradient(
+                          center: const Alignment(-0.3, -0.4),
+                          radius: 1.0,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.80),
+                            Colors.white.withValues(alpha: 0.30),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 0.35, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── Дополнительный тонкий блик — правый край ──────
+                  Positioned(
+                    top: widget.size * 0.22,
+                    right: widget.size * 0.07,
+                    child: Container(
+                      width: widget.size * 0.06,
+                      height: widget.size * 0.22,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(widget.size),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(alpha: 0.0),
+                            Colors.white.withValues(alpha: 0.45),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ── Динамический вторичный блик — нижний правый ───
+                  // Меняет цвет вместе с ободком
+                  Positioned(
+                    bottom: widget.size * 0.09,
+                    right: widget.size * 0.13,
+                    child: Container(
+                      width: secondarySize,
+                      height: secondarySize * 0.45,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(widget.size),
+                        gradient: RadialGradient(
+                          colors: [
+                            pearl.withValues(alpha: 0.38),
+                            pearl.withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-          stops: const [0.6, 0.8, 0.88, 0.95, 1.0],
-        ),
-        boxShadow: [
-          // Легкая внешняя тень/свечение для отделения от фона
-          BoxShadow(
-            color: const Color(0xFF98FB98).withOpacity(0.05), // Мятный оттенок
-            blurRadius: 15,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      // Используем Stack, чтобы наложить блики ПОВЕРХ контента (ребенка)
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Слой 3: Контент внутри (Магическое ядро, Ребенок, Анимация)
-          // Мы слегка размываем контент, чтобы создать эффект преломления света внутри пузыря
-          ClipOval(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 0.5, sigmaY: 0.5),
-              child: child,
-            ),
-          ),
-
-          // Слой 4: Основной яркий блик (источник света)
-          Positioned(
-            top: size * 0.08,
-            left: size * 0.12,
-            child: Opacity(
-              opacity: 0.6,
-              child: Container(
-                width: highlightSize,
-                height: highlightSize * 0.6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white,
-                      Colors.white.withOpacity(0.0),
-                    ],
-                    stops: const [0.1, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Слой 5: Вторичный, более мягкий блик/отражение (снизу)
-          Positioned(
-            bottom: size * 0.1,
-            right: size * 0.15,
-            child: Opacity(
-              opacity: 0.3,
-              child: Container(
-                width: reflectionSize * 0.5,
-                height: reflectionSize * 0.3,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFFFFC0CB), // Розоватый отсвет
-                      Colors.white.withOpacity(0.0),
-                    ],
-                    stops: const [0.0, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// _PearlBorderPainter — вращающийся перламутровый ободок.
+//
+// Рисует один круг со SweepGradient (многоцветный).
+// Начальный угол смещается с каждым кадром → иллюзия вращения.
+// Один вызов drawCircle — минимальная нагрузка.
+// ─────────────────────────────────────────────────────────────────
+class _PearlBorderPainter extends CustomPainter {
+  final double t;
+  final List<Color> colors;
+
+  const _PearlBorderPainter({required this.t, required this.colors});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 1.0;
+    final startAngle = t * 2 * math.pi; // медленное вращение
+
+    // SweepGradient по всему периметру сферы
+    final gradient = SweepGradient(
+      startAngle: startAngle,
+      endAngle: startAngle + 2 * math.pi,
+      colors: [
+        ...colors.map((c) => c.withValues(alpha: 0.85)),
+      ],
+    );
+
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..shader = gradient.createShader(rect)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _PearlBorderPainter old) => old.t != t;
 }

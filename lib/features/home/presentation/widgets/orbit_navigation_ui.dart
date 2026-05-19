@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../pregnancy/domain/pregnancy_settings.dart';
+import '../../../../l10n/app_localizations.dart';
 
 // --- ÐŸÐžÐœÐžÐ©ÐÐ˜Ðš Ð”Ð›Ð¯ SVG ---
 class BloomIcon extends StatelessWidget {
@@ -33,17 +35,15 @@ class BloomIcon extends StatelessWidget {
 // --- APP BAR ---
 class OrbitAppBar extends StatelessWidget {
   final PregnancySettings settings;
-  final bool isFruitMode;
-  final VoidCallback onToggleMode;
   final VoidCallback onSettingsTap;
+  final VoidCallback onProTap;
   final double depthOpacity;
 
   const OrbitAppBar({
     super.key,
     required this.settings,
-    required this.isFruitMode,
-    required this.onToggleMode,
     required this.onSettingsTap,
+    required this.onProTap,
     required this.depthOpacity,
   });
 
@@ -52,10 +52,10 @@ class OrbitAppBar extends StatelessWidget {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final scaffoldBg = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
+    final l10n = AppLocalizations.of(context)!;
 
     final topPadding = MediaQuery.of(context).padding.top;
-    final double barHeight = topPadding + 60; // Ð§ÑƒÑ‚ÑŒ ÐºÐ¾Ð¼Ð¿Ð°ÐºÑ‚Ð½ÐµÐµ
+    final double barHeight = topPadding + 60;
 
     return Positioned(
       top: 0,
@@ -74,9 +74,11 @@ class OrbitAppBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: scaffoldBg.withValues(alpha: 0.6),
                   border: Border(
-                      bottom: BorderSide(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          width: 0.5)),
+                    bottom: BorderSide(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      width: 0.5,
+                    ),
+                  ),
                 ),
                 padding: EdgeInsets.only(
                   top: topPadding,
@@ -84,47 +86,117 @@ class OrbitAppBar extends StatelessWidget {
                   right: 24,
                   bottom: 8,
                 ),
-                // Ð˜Ð¡ÐŸÐžÐ›Ð¬Ð—Ð£Ð•Ðœ STACK Ð’ÐœÐ•Ð¡Ð¢Ðž ROW Ð”Ð›Ð¯ Ð˜Ð”Ð•ÐÐ›Ð¬ÐÐžÐ“Ðž Ð¦Ð•ÐÐ¢Ð Ð
-                child: Stack(
-                  alignment:
-                      Alignment.center, // Ð¦ÐµÐ½Ñ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÑŒ
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Ð›Ð•Ð’Ðž: ÐŸÐµÑ€ÐµÐºÐ»ÑŽÑ‡Ð°Ñ‚ÐµÐ»ÑŒ Ñ€ÐµÐ¶Ð¸Ð¼Ð°
-                    Positioned(
-                      left: 0,
-                      child: GestureDetector(
-                        onTap: onToggleMode,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: cardColor.withValues(alpha: 0.5),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: cardColor.withValues(alpha: 0.8)),
+                    // Приветствие с именем мамы
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _greeting(context),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: theme.textTheme.labelSmall?.color
+                                  ?.withValues(alpha: 0.55),
+                              letterSpacing: 0.5,
+                            ),
                           ),
-                        ),
+                          if (settings.momName != null &&
+                              settings.momName!.isNotEmpty)
+                            Text(
+                              settings.momName!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: theme.textTheme.bodyLarge?.color,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
                     ),
-
-                    // Ð¦Ð•ÐÐ¢Ð : ÐŸÑ€Ð¾Ñ„Ð¸Ð»ÑŒ (Ð’ÑÑ‚Ð°ÐµÑ‚ Ð¿Ð¾ Ñ†ÐµÐ½Ñ‚Ñ€Ñƒ Ð±Ð»Ð°Ð³Ð¾Ð´Ð°Ñ€Ñ Stack alignment)
+                    // Animated PRO badge
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onProTap();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.primaryColor,
+                              theme.primaryColor.withValues(alpha: 0.7)
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.workspace_premium_rounded,
+                                color: Colors.white, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              l10n.paywallProBadge,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                          .animate(
+                              onPlay: (controller) =>
+                                  controller.repeat(reverse: true))
+                          .shimmer(
+                              duration: const Duration(milliseconds: 2500),
+                              color: Colors.white.withValues(alpha: 0.5))
+                          .scaleXY(
+                              begin: 1.0,
+                              end: 1.02,
+                              duration: const Duration(milliseconds: 1500),
+                              curve: Curves.easeInOut),
+                    ),
+                    // Аватар / настройки
                     GestureDetector(
                       onTap: onSettingsTap,
                       child: Container(
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: scaffoldBg,
-                            border: Border.all(
-                                color: primaryColor.withValues(alpha: 0.3),
-                                width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: primaryColor.withValues(alpha: 0.1),
-                                  blurRadius: 10,
-                                  spreadRadius: 2)
-                            ]),
+                          shape: BoxShape.circle,
+                          color: scaffoldBg,
+                          border: Border.all(
+                            color: primaryColor.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            )
+                          ],
+                        ),
                         child: ClipOval(
                           child: Image.asset(
                             'assets/images/profile.png',
@@ -132,8 +204,10 @@ class OrbitAppBar extends StatelessWidget {
                             height: 44,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.person,
-                                  color: primaryColor.withValues(alpha: 0.5));
+                              return Icon(
+                                Icons.person,
+                                color: primaryColor.withValues(alpha: 0.5),
+                              );
                             },
                           ),
                         ),
@@ -147,6 +221,15 @@ class OrbitAppBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _greeting(BuildContext context) {
+    final hour = DateTime.now().hour;
+    final l10n = AppLocalizations.of(context)!;
+    if (hour < 6) return l10n.greetingNight;
+    if (hour < 12) return l10n.greetingMorning;
+    if (hour < 17) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 }
 
@@ -170,49 +253,64 @@ class OrbitNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final navBgColor = theme.cardColor.withValues(alpha: 0.85);
+    final primaryColor = theme.primaryColor;
 
     return Positioned(
-      bottom:
-          32, // Ð§ÑƒÑ‚ÑŒ Ð²Ñ‹ÑˆÐµ Ð¾Ñ‚ ÐºÑ€Ð°Ñ Ð´Ð»Ñ ÑÐ¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… iPhone
+      bottom: 30,
       left: 24,
       right: 24,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            height: 70,
+            height: 78,
             decoration: BoxDecoration(
-                color: navBgColor,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  )
-                ]),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.88),
+                  theme.colorScheme.surface.withValues(alpha: 0.82),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: primaryColor.withValues(alpha: 0.10),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryColor.withValues(alpha: 0.10),
+                  blurRadius: 26,
+                  offset: const Offset(0, 14),
+                )
+              ],
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _NavItem(
-                    icon: CupertinoIcons.square_grid_2x2,
-                    label: labelTools,
-                    isActive: false,
-                    onTap: onToolsTap),
-                _NavItem(
-                    icon: CupertinoIcons.house_alt,
-                    label: labelHome,
-                    isActive: true,
-                    onTap: () {}),
-                _NavItem(
-                    icon: CupertinoIcons.book,
-                    label: labelDiary,
-                    isActive: false,
-                    onTap: onDiaryTap),
+                Expanded(
+                  child: _NavItem(
+                      icon: CupertinoIcons.square_grid_2x2,
+                      label: labelTools,
+                      isActive: false,
+                      onTap: onToolsTap),
+                ),
+                Expanded(
+                  child: _NavItem(
+                      icon: CupertinoIcons.house_alt,
+                      label: labelHome,
+                      isActive: true,
+                      onTap: () {}),
+                ),
+                Expanded(
+                  child: _NavItem(
+                      icon: CupertinoIcons.book,
+                      label: labelDiary,
+                      isActive: false,
+                      onTap: onDiaryTap),
+                ),
               ],
             ),
           ),
@@ -240,9 +338,10 @@ class _NavItem extends StatelessWidget {
     final theme = Theme.of(context);
     final primaryColor = theme.primaryColor;
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
+    final textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
-    final color = isActive ? primaryColor : mutedColor.withValues(alpha: 0.5);
-    final scale = isActive ? 1.2 : 1.0;
+    final color = isActive ? primaryColor : mutedColor.withValues(alpha: 0.72);
+    final scale = isActive ? 1.03 : 1.0;
 
     return GestureDetector(
       onTap: () {
@@ -252,9 +351,38 @@ class _NavItem extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Transform.scale(
         scale: scale,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Icon(icon, color: color, size: 28),
+        child: Align(
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 78, maxWidth: 96),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? primaryColor.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 22),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: isActive
+                        ? textColor.withValues(alpha: 0.88)
+                        : mutedColor.withValues(alpha: 0.82),
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 11,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -67,33 +67,53 @@ const PregnancySettingsSchema = CollectionSchema(
       name: r'languageCode',
       type: IsarType.string,
     ),
-    r'partnerName': PropertySchema(
+    r'momName': PropertySchema(
       id: 10,
+      name: r'momName',
+      type: IsarType.string,
+    ),
+    r'notifyVitamins': PropertySchema(
+      id: 11,
+      name: r'notifyVitamins',
+      type: IsarType.bool,
+    ),
+    r'notifyWater': PropertySchema(
+      id: 12,
+      name: r'notifyWater',
+      type: IsarType.bool,
+    ),
+    r'notifyWeekly': PropertySchema(
+      id: 13,
+      name: r'notifyWeekly',
+      type: IsarType.bool,
+    ),
+    r'partnerName': PropertySchema(
+      id: 14,
       name: r'partnerName',
       type: IsarType.string,
     ),
     r'partnerPhone': PropertySchema(
-      id: 11,
+      id: 15,
       name: r'partnerPhone',
       type: IsarType.string,
     ),
     r'prePregnancyWeightKg': PropertySchema(
-      id: 12,
+      id: 16,
       name: r'prePregnancyWeightKg',
       type: IsarType.double,
     ),
     r'showLaborButton': PropertySchema(
-      id: 13,
+      id: 17,
       name: r'showLaborButton',
       type: IsarType.bool,
     ),
     r'themeKey': PropertySchema(
-      id: 14,
+      id: 18,
       name: r'themeKey',
       type: IsarType.string,
     ),
     r'visualModeKey': PropertySchema(
-      id: 15,
+      id: 19,
       name: r'visualModeKey',
       type: IsarType.string,
     )
@@ -139,6 +159,12 @@ int _pregnancySettingsEstimateSize(
   }
   bytesCount += 3 + object.languageCode.length * 3;
   {
+    final value = object.momName;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.partnerName;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -171,12 +197,16 @@ void _pregnancySettingsSerialize(
   writer.writeBool(offsets[7], object.isFruitMode);
   writer.writeBool(offsets[8], object.isLaborMode);
   writer.writeString(offsets[9], object.languageCode);
-  writer.writeString(offsets[10], object.partnerName);
-  writer.writeString(offsets[11], object.partnerPhone);
-  writer.writeDouble(offsets[12], object.prePregnancyWeightKg);
-  writer.writeBool(offsets[13], object.showLaborButton);
-  writer.writeString(offsets[14], object.themeKey);
-  writer.writeString(offsets[15], object.visualModeKey);
+  writer.writeString(offsets[10], object.momName);
+  writer.writeBool(offsets[11], object.notifyVitamins);
+  writer.writeBool(offsets[12], object.notifyWater);
+  writer.writeBool(offsets[13], object.notifyWeekly);
+  writer.writeString(offsets[14], object.partnerName);
+  writer.writeString(offsets[15], object.partnerPhone);
+  writer.writeDouble(offsets[16], object.prePregnancyWeightKg);
+  writer.writeBool(offsets[17], object.showLaborButton);
+  writer.writeString(offsets[18], object.themeKey);
+  writer.writeString(offsets[19], object.visualModeKey);
 }
 
 PregnancySettings _pregnancySettingsDeserialize(
@@ -194,12 +224,16 @@ PregnancySettings _pregnancySettingsDeserialize(
     isFruitMode: reader.readBoolOrNull(offsets[7]) ?? true,
     isLaborMode: reader.readBoolOrNull(offsets[8]) ?? false,
     languageCode: reader.readStringOrNull(offsets[9]) ?? 'en',
-    partnerName: reader.readStringOrNull(offsets[10]),
-    partnerPhone: reader.readStringOrNull(offsets[11]),
-    prePregnancyWeightKg: reader.readDoubleOrNull(offsets[12]),
-    showLaborButton: reader.readBoolOrNull(offsets[13]) ?? true,
-    themeKey: reader.readStringOrNull(offsets[14]) ?? 'serenity',
-    visualModeKey: reader.readStringOrNull(offsets[15]) ??
+    momName: reader.readStringOrNull(offsets[10]),
+    notifyVitamins: reader.readBoolOrNull(offsets[11]) ?? true,
+    notifyWater: reader.readBoolOrNull(offsets[12]) ?? true,
+    notifyWeekly: reader.readBoolOrNull(offsets[13]) ?? true,
+    partnerName: reader.readStringOrNull(offsets[14]),
+    partnerPhone: reader.readStringOrNull(offsets[15]),
+    prePregnancyWeightKg: reader.readDoubleOrNull(offsets[16]),
+    showLaborButton: reader.readBoolOrNull(offsets[17]) ?? true,
+    themeKey: reader.readStringOrNull(offsets[18]) ?? 'serenity',
+    visualModeKey: reader.readStringOrNull(offsets[19]) ??
         PregnancySettings.visualModeFruit,
   );
   object.id = id;
@@ -236,14 +270,22 @@ P _pregnancySettingsDeserializeProp<P>(
     case 10:
       return (reader.readStringOrNull(offset)) as P;
     case 11:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? true) as P;
     case 12:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? true) as P;
     case 13:
       return (reader.readBoolOrNull(offset) ?? true) as P;
     case 14:
-      return (reader.readStringOrNull(offset) ?? 'serenity') as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
+      return (reader.readStringOrNull(offset)) as P;
+    case 16:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 17:
+      return (reader.readBoolOrNull(offset) ?? true) as P;
+    case 18:
+      return (reader.readStringOrNull(offset) ?? 'serenity') as P;
+    case 19:
       return (reader.readStringOrNull(offset) ??
           PregnancySettings.visualModeFruit) as P;
     default:
@@ -1356,6 +1398,190 @@ extension PregnancySettingsQueryFilter
   }
 
   QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'momName',
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'momName',
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'momName',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'momName',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'momName',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'momName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      momNameIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'momName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      notifyVitaminsEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notifyVitamins',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      notifyWaterEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notifyWater',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
+      notifyWeeklyEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'notifyWeekly',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterFilterCondition>
       partnerNameIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -2179,6 +2405,62 @@ extension PregnancySettingsQuerySortBy
   }
 
   QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByMomName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'momName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByMomNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'momName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyVitamins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyVitamins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyVitaminsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyVitamins', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyWater() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWater', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyWaterDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWater', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyWeekly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWeekly', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      sortByNotifyWeeklyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWeekly', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
       sortByPartnerName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'partnerName', Sort.asc);
@@ -2419,6 +2701,62 @@ extension PregnancySettingsQuerySortThenBy
   }
 
   QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByMomName() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'momName', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByMomNameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'momName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyVitamins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyVitamins', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyVitaminsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyVitamins', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyWater() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWater', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyWaterDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWater', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyWeekly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWeekly', Sort.asc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
+      thenByNotifyWeeklyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'notifyWeekly', Sort.desc);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QAfterSortBy>
       thenByPartnerName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'partnerName', Sort.asc);
@@ -2578,6 +2916,34 @@ extension PregnancySettingsQueryWhereDistinct
   }
 
   QueryBuilder<PregnancySettings, PregnancySettings, QDistinct>
+      distinctByMomName({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'momName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QDistinct>
+      distinctByNotifyVitamins() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'notifyVitamins');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QDistinct>
+      distinctByNotifyWater() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'notifyWater');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QDistinct>
+      distinctByNotifyWeekly() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'notifyWeekly');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, PregnancySettings, QDistinct>
       distinctByPartnerName({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'partnerName', caseSensitive: caseSensitive);
@@ -2695,6 +3061,33 @@ extension PregnancySettingsQueryProperty
       languageCodeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'languageCode');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, String?, QQueryOperations> momNameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'momName');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, bool, QQueryOperations>
+      notifyVitaminsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'notifyVitamins');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, bool, QQueryOperations>
+      notifyWaterProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'notifyWater');
+    });
+  }
+
+  QueryBuilder<PregnancySettings, bool, QQueryOperations>
+      notifyWeeklyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'notifyWeekly');
     });
   }
 

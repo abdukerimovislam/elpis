@@ -66,7 +66,7 @@ class DiarySheet extends ConsumerWidget {
             child: historyAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
-                  child: Text('Error loading diary',
+                  child: Text(l10n.diaryLoadError,
                       style: TextStyle(color: mutedTextColor))),
               data: (history) {
                 if (history.isEmpty) {

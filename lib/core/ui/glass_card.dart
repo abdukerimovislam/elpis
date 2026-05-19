@@ -30,48 +30,39 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Базовый цвет карточки
     final themeCardColor = Theme.of(context).cardColor;
-
-    // Если цвет не передан, берем из темы с прозрачностью
-    final effectiveColor = color ?? themeCardColor.withValues(alpha: 0.65);
-
-    // Логика: если forceNoBlur == true, мы НЕ используем блюр.
+    final effectiveColor = color ?? themeCardColor.withValues(alpha: 0.94);
     final useBlur = !forceNoBlur;
 
-    // Контент карточки
     Widget content = Container(
       width: width,
       height: height,
       padding: padding,
-      // Если блюра нет, делаем фон чуть плотнее, чтобы текст читался
-      color: useBlur ? effectiveColor : effectiveColor.withValues(alpha: 0.9),
+      color: useBlur ? effectiveColor : effectiveColor.withValues(alpha: 0.98),
       child: child,
     );
 
-    // Применяем блюр только если разрешено
     if (useBlur) {
       content = BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: content,
       );
     }
 
-    // Обертка с границами и скруглением
     Widget card = Container(
       margin: margin,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.4),
-          width: 1.5,
+          color: Colors.white.withValues(alpha: 0.72),
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            spreadRadius: 0,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -81,7 +72,6 @@ class GlassCard extends StatelessWidget {
       ),
     );
 
-    // Если передан onTap, добавляем эффект нажатия
     if (onTap != null) {
       return GestureDetector(
         onTap: onTap,

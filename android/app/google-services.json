@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "657119293554-3cbcla0gnhdmbmqn59rpfbnch01l126d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.midas.bloom_mama",
+            "certificate_hash": "8ff73b74c43adaa6c50b821c060049053481a622"
+          }
+        },
+        {
           "client_id": "657119293554-fn7r4hr1joslvbpa27h1m6ehp4frarsa.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,6 +45,13 @@
             {
               "client_id": "657119293554-qtudjqte4o6dcih35a6l38vgerp09evt.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "657119293554-gc67tjrc24pjgmmq609h7da9d9i6lamm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bloomMama"
+              }
             }
           ]
         }

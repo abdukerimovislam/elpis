@@ -16,6 +16,17 @@ class LaborMode extends _$LaborMode {
 
   Future<void> toggleLaborMode(bool isActive) async {
     final repo = ref.read(pregnancyRepositoryProvider);
+
+    // ✅ ИСПРАВЛЕНО: При ВЫХОДЕ из режима родов закрываем активную схватку.
+    // Без этого в БД оставался Contraction с endTime = null,
+    // и при следующем запуске приложение показывало "схватку" огромной длины.
+    if (!isActive) {
+      final activeContraction = await repo.getActiveContraction();
+      if (activeContraction != null) {
+        await repo.stopContraction(activeContraction.id);
+      }
+    }
+
     await repo.updateSettings(isLaborMode: isActive);
   }
 
@@ -41,8 +52,9 @@ class LaborMode extends _$LaborMode {
     String partnerName,
   ) async {
     final l10n = AppLocalizations.of(context)!;
-    final message =
-        l10n.laborHelpMessage(partnerName.isNotEmpty ? partnerName : "Honey");
+    final message = l10n.laborHelpMessage(
+      partnerName.isNotEmpty ? partnerName : l10n.laborHelpFallbackName,
+    );
     final encodedMessage = Uri.encodeComponent(message);
 
     final whatsappUrl =

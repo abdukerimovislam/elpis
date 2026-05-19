@@ -137,10 +137,11 @@ class BumpGallerySheet extends ConsumerWidget {
       onLongPress: isTaken ? () => _confirmDelete(context, ref, photo) : null,
       child: Container(
         decoration: BoxDecoration(
-          color: theme.cardColor,
+          color: hasValidFile ? theme.cardColor : (theme.brightness == Brightness.dark ? const Color(0xFF1E1E1E) : Colors.grey.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(24),
+          border: hasValidFile ? null : Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1.5, style: BorderStyle.solid),
           boxShadow: [
-            if (theme.brightness == Brightness.light)
+            if (theme.brightness == Brightness.light && hasValidFile)
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
@@ -193,24 +194,31 @@ class BumpGallerySheet extends ConsumerWidget {
           ],
         )
             : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.add_a_photo_outlined,
-              color: primaryColor.withValues(alpha: 0.5),
-              size: 32,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add_a_photo_rounded,
+                    color: primaryColor.withValues(alpha: 0.7),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  l10n.galleryWeek(week),
+                  style: TextStyle(
+                    color: primaryColor.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.galleryWeek(week),
-              style: TextStyle(
-                color: mutedColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

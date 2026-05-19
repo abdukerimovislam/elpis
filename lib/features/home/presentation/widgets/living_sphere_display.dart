@@ -11,9 +11,10 @@ import '../../../pregnancy/data/fetal_growth_mapper.dart';
 import '../../../pregnancy/domain/fetal_growth_stage.dart';
 import '../../../pregnancy/data/pregnancy_repository.dart';
 import '../../../pregnancy/domain/pregnancy_settings.dart';
+import '../../../../core/theme/app_theme.dart';
 
 final pregnancySettingsStreamProvider =
-StreamProvider<PregnancySettings?>((ref) {
+    StreamProvider<PregnancySettings?>((ref) {
   final repository = ref.watch(pregnancyRepositoryProvider);
   return repository.watchSettings();
 });
@@ -21,11 +22,13 @@ StreamProvider<PregnancySettings?>((ref) {
 class LivingSphereDisplay extends ConsumerStatefulWidget {
   final int week;
   final double scale;
+  final bool showModeToggle;
 
   const LivingSphereDisplay({
     super.key,
     required this.week,
     this.scale = 1.0,
+    this.showModeToggle = true,
   });
 
   @override
@@ -71,7 +74,7 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
 
     final currentIndex = _modeOrder.indexOf(currentMode);
     final nextMode = _modeOrder[
-    (currentIndex == -1 ? 0 : currentIndex + 1) % _modeOrder.length];
+        (currentIndex == -1 ? 0 : currentIndex + 1) % _modeOrder.length];
 
     setState(() {
       _isSavingMode = true;
@@ -112,9 +115,9 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
 
     final imagePath = switch (visualModeKey) {
       PregnancySettings.visualModeFruit =>
-      'assets/images/fruits/week_$imageWeek.webp',
+        'assets/images/fruits/week_$imageWeek.webp',
       PregnancySettings.visualModeGrowth => growthData.assetPath,
-    // Режим реалистичных предметов (маковое зернышко и тд)
+      // Режим реалистичных предметов (маковое зернышко и тд)
       _ => 'assets/images/realistic/week_$imageWeek.webp',
     };
     final biometrics = _PregnancyData.getForWeek(safeWeek, l10n);
@@ -186,13 +189,16 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
                       child: Center(
                         child: GlassSphere(
                           size: sphereSize,
+                          pearlColors: AppTheme.getPalette(safeWeek).pearlColors,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
                               // Единый теплый фон MagicalLifeCore для всех режимов
                               Transform.scale(
                                 scale: sphereSize / 340,
-                                child: const MagicalLifeCore(),
+                                child: MagicalLifeCore(
+                                  auraColor: AppTheme.getPalette(safeWeek).auraColor,
+                                ),
                               ),
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 600),
@@ -219,19 +225,25 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
                                   ),
                                 ),
                               ),
+                              // ✨ Bubbles only in fetal growth mode
+                              SphereAuraEffect(
+                                size: sphereSize,
+                                enabled: isGrowthMode,
+                              ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    Align(
-                      alignment: const Alignment(0, 0.85),
-                      child: _ModeToggleButton(
-                        visualModeKey: visualModeKey,
-                        isSaving: _isSavingMode,
-                        onTap: () => _toggleMode(visualModeKey),
+                    if (widget.showModeToggle)
+                      Align(
+                        alignment: const Alignment(0, 0.85),
+                        child: _ModeToggleButton(
+                          visualModeKey: visualModeKey,
+                          isSaving: _isSavingMode,
+                          onTap: () => _toggleMode(visualModeKey),
+                        ),
                       ),
-                    ),
                     Align(
                       alignment: const Alignment(-0.9, -0.5),
                       child: _BiometricTag(
@@ -284,15 +296,15 @@ class _CellDevelopmentAnimationState extends State<CellDevelopmentAnimation>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (mounted) {
-          setState(() {
-            _stage = (_stage % 5) + 1; // Зацикливаем 1 -> 5
-          });
-          _controller.forward(from: 0.0);
+        if (status == AnimationStatus.completed) {
+          if (mounted) {
+            setState(() {
+              _stage = (_stage % 5) + 1; // Зацикливаем 1 -> 5
+            });
+            _controller.forward(from: 0.0);
+          }
         }
-      }
-    });
+      });
 
     _controller.forward();
   }
@@ -346,20 +358,20 @@ class _ModeToggleButton extends StatelessWidget {
 
     final (IconData icon, String label, int target) = switch (visualModeKey) {
       PregnancySettings.visualModeFruit => (
-      Icons.eco_rounded,
-      l10n.visualModeFruit,
-      0,
-      ),
+          Icons.eco_rounded,
+          l10n.visualModeFruit,
+          0,
+        ),
       PregnancySettings.visualModeGrowth => (
-      Icons.child_friendly_rounded,
-      isRu ? 'Развитие' : 'Growth',
-      2,
-      ),
+          Icons.child_friendly_rounded,
+          isRu ? 'Развитие' : 'Growth',
+          2,
+        ),
       _ => (
-      Icons.widgets_rounded,
-      l10n.visualModeRealistic,
-      1,
-      ),
+          Icons.widgets_rounded,
+          l10n.visualModeRealistic,
+          1,
+        ),
     };
 
     return Material(
@@ -412,11 +424,11 @@ class _ModeToggleButton extends StatelessWidget {
         ),
       ),
     ).animate(target: target.toDouble()).scale(
-      duration: 300.ms,
-      curve: Curves.easeOutBack,
-      begin: const Offset(0.95, 0.95),
-      end: const Offset(1.0, 1.0),
-    );
+          duration: 300.ms,
+          curve: Curves.easeOutBack,
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1.0, 1.0),
+        );
   }
 }
 
@@ -464,8 +476,7 @@ class _GrowthSphereImage extends StatelessWidget {
             final imageSlideY = normalizedOffset + (1 - t) * 10;
 
             final animatedScale = dynamicScale * (0.88 + (t * 0.12));
-            final animatedRotation =
-                rotation + ((1 - t) * -0.08 * direction);
+            final animatedRotation = rotation + ((1 - t) * -0.08 * direction);
 
             // Убрали все локальные градиенты и тени. Теперь здесь только чистое изображение плода.
             return Align(
@@ -663,7 +674,8 @@ class OrbitPainter extends CustomPainter {
 }
 
 class MagicalLifeCore extends StatefulWidget {
-  const MagicalLifeCore({super.key});
+  final Color auraColor;
+  const MagicalLifeCore({super.key, required this.auraColor});
 
   @override
   State<MagicalLifeCore> createState() => _MagicalLifeCoreState();
@@ -679,12 +691,12 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore>
   void initState() {
     super.initState();
     _pulseController =
-    AnimationController(vsync: this, duration: const Duration(seconds: 6))
-      ..repeat(reverse: true);
+        AnimationController(vsync: this, duration: const Duration(seconds: 4)) // Быстрее пульс для жизни
+          ..repeat(reverse: true);
     final curve =
-    CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
-    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(curve);
-    _opacityAnimation = Tween<double>(begin: 0.5, end: 0.8).animate(curve);
+        CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine);
+    _scaleAnimation = Tween<double>(begin: 0.88, end: 1.05).animate(curve);
+    _opacityAnimation = Tween<double>(begin: 0.4, end: 0.9).animate(curve);
   }
 
   @override
@@ -708,17 +720,18 @@ class _MagicalLifeCoreState extends State<MagicalLifeCore>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFFFCE38A).withValues(alpha: 0.6 * currentOpacity),
-                  const Color(0xFF8E9BAE).withValues(alpha: 0.0),
+                  widget.auraColor
+                      .withValues(alpha: 0.7 * currentOpacity),
+                  widget.auraColor.withValues(alpha: 0.0),
                 ],
-                stops: const [0.2, 1.0],
+                stops: const [0.25, 1.0],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFCE38A)
-                      .withValues(alpha: 0.3 * currentOpacity),
-                  blurRadius: 60,
-                  spreadRadius: 10,
+                  color: widget.auraColor
+                      .withValues(alpha: 0.4 * currentOpacity),
+                  blurRadius: 70,
+                  spreadRadius: 15,
                 ),
               ],
             ),
@@ -810,4 +823,198 @@ class _PregnancyData {
     41: [3700, 517],
     42: [3900, 520],
   };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// SphereAuraEffect — «Rising Bubbles»
+//
+// Пузырьки поднимаются снизу вверх внутри сферы, как в
+// лабораторной колбе. Эффект достигается только через
+// drawCircle + drawOval — никакого blur, никаких тяжёлых операций.
+// Один AnimationController. RepaintBoundary изолирует слой.
+// Автоматически выключается при MediaQuery.disableAnimations.
+// ─────────────────────────────────────────────────────────────────
+class SphereAuraEffect extends StatefulWidget {
+  final double size;
+  final bool enabled;
+  const SphereAuraEffect({super.key, required this.size, this.enabled = true});
+
+  @override
+  State<SphereAuraEffect> createState() => _SphereAuraEffectState();
+}
+
+class _SphereAuraEffectState extends State<SphereAuraEffect>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      // Базовая скорость: полный цикл за 8 сек.
+      // Каждый пузырь имеет свой speedMult, поэтому кажется что они
+      // плывут с разной скоростью.
+      duration: const Duration(seconds: 8),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return const SizedBox.shrink();
+    if (MediaQuery.of(context).disableAnimations) {
+      return const SizedBox.shrink();
+    }
+
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (_, __) => CustomPaint(
+            size: Size(widget.size, widget.size),
+            painter: _BubblePainter(
+              t: _controller.value,
+              primaryColor: primaryColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Конфигурация пузырьков ───────────────────────────────────────
+// Каждая запись: [xFrac, phase, radius, speedMult, wobbleAmp, wobbleFreq]
+//
+//  xFrac      — горизонтальная позиция от центра (-0.4 … +0.4 × r)
+//  phase      — смещение фазы (0.0 … 1.0), разбрасывает по высоте
+//  radius     — радиус пузыря в логических пикселях
+//  speedMult  — множитель скорости относительно базовой
+//  wobbleAmp  — амплитуда горизонтального покачивания (пикселей)
+//  wobbleFreq — частота покачивания (оборотов за путь снизу вверх)
+const List<List<double>> _kBubbles = [
+  [-0.28, 0.00, 3.5, 1.00, 4.5, 1.8],
+  [0.12, 0.14, 2.2, 1.35, 3.0, 2.2],
+  [-0.06, 0.28, 4.8, 0.78, 6.0, 1.4],
+  [0.32, 0.42, 2.8, 1.55, 3.5, 2.6],
+  [-0.18, 0.57, 2.0, 1.12, 2.5, 1.9],
+  [0.22, 0.70, 4.0, 0.91, 5.0, 1.6],
+  [-0.33, 0.83, 2.4, 1.44, 3.0, 2.0],
+  [0.06, 0.07, 1.6, 1.70, 2.0, 2.8],
+  [-0.22, 0.38, 3.2, 0.72, 5.5, 1.3],
+  [0.28, 0.53, 2.2, 1.25, 3.5, 2.3],
+  [-0.09, 0.20, 3.0, 1.05, 4.0, 1.7],
+  [0.17, 0.66, 1.6, 1.65, 2.0, 3.0],
+  [-0.37, 0.79, 2.6, 0.88, 3.0, 1.5],
+  [0.38, 0.10, 2.0, 1.30, 4.0, 2.1],
+  [0.01, 0.91, 3.4, 1.08, 3.8, 1.8],
+];
+
+class _BubblePainter extends CustomPainter {
+  final double t;
+  final Color primaryColor;
+
+  const _BubblePainter({required this.t, required this.primaryColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = size.width / 2;
+
+    // Зона подъёма: от 72% снизу до 72% сверху (края обрезаются сферой)
+    final startY = cy + r * 0.72;
+    final endY = cy - r * 0.78;
+    final travelH = startY - endY;
+
+    for (final b in _kBubbles) {
+      final xFrac = b[0];
+      final phase = b[1];
+      final bubbleR = b[2];
+      final speedMult = b[3];
+      final wobbleAmp = b[4];
+      final wobbleFreq = b[5];
+
+      // Прогресс пузыря: 0 = у дна, 1 = у вершины
+      // Зацикливаем со сдвигом фазы (stagger)
+      final progress = ((t * speedMult + phase) % 1.0);
+
+      // Y: поднимаемся от startY к endY
+      final py = startY - progress * travelH;
+
+      // X: базовая позиция + горизонтальное покачивание
+      final wobble = wobbleAmp * math.sin(progress * wobbleFreq * 2 * math.pi);
+      final px = cx + xFrac * r + wobble;
+
+      // Прозрачность: плавно появляется снизу, исчезает у вершины
+      final opacity = _bubbleOpacity(progress);
+      if (opacity <= 0.01) continue;
+
+      // ── Рисуем стеклянный пузырёк ──────────────────────────────
+
+      // 1. Полупрозрачный заливочный слой (тело пузыря)
+      canvas.drawCircle(
+        Offset(px, py),
+        bubbleR,
+        Paint()
+          ..color = Colors.white.withValues(alpha: opacity * 0.10)
+          ..style = PaintingStyle.fill,
+      );
+
+      // 2. Тонкая окантовка (стенка пузыря)
+      canvas.drawCircle(
+        Offset(px, py),
+        bubbleR,
+        Paint()
+          ..color = Colors.white.withValues(alpha: opacity * 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8,
+      );
+
+      // 3. Бликовый блик: маленькая яркая точка в верхнем-левом краю —
+      //    имитирует преломление света в стекле пузырька
+      final highlightR = bubbleR * 0.28;
+      canvas.drawCircle(
+        Offset(px - bubbleR * 0.38, py - bubbleR * 0.38),
+        highlightR,
+        Paint()
+          ..color = Colors.white.withValues(alpha: opacity * 0.75)
+          ..style = PaintingStyle.fill,
+      );
+
+      // 4. Лёгкое голубоватое свечение вокруг (primaryColor tint)
+      canvas.drawCircle(
+        Offset(px, py),
+        bubbleR * 1.7,
+        Paint()
+          ..color = Color.lerp(Colors.white, primaryColor, 0.35)!
+              .withValues(alpha: opacity * 0.06)
+          ..style = PaintingStyle.fill,
+      );
+    }
+  }
+
+  /// Плавное появление в нижней 15% зоне и исчезновение в верхней 20%.
+  double _bubbleOpacity(double progress) {
+    const fadeInEnd = 0.15;
+    const fadeOutStart = 0.80;
+    if (progress < fadeInEnd) {
+      return progress / fadeInEnd;
+    } else if (progress > fadeOutStart) {
+      return 1.0 - (progress - fadeOutStart) / (1.0 - fadeOutStart);
+    }
+    return 1.0;
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubblePainter old) =>
+      old.t != t || old.primaryColor != primaryColor;
 }

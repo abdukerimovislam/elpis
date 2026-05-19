@@ -1,31 +1,34 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/glass_text_field.dart';
-
-import '../../health/presentation/tools_sheet.dart';
-import '../../pregnancy/data/pregnancy_repository.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../health/presentation/care_center_screen.dart';
+import '../../onboarding/presentation/onboarding_screen.dart';
 import '../../pregnancy/data/insight_repository.dart';
+import '../../pregnancy/data/pregnancy_repository.dart';
+import '../../pregnancy/domain/insight.dart';
 import '../../pregnancy/domain/pregnancy_settings.dart';
+import '../../pregnancy/presentation/diary_sheet.dart';
 import '../../pregnancy/presentation/widgets/fetal_growth_section.dart';
 import '../../settings/presentation/settings_sheet.dart';
-import '../../pregnancy/presentation/diary_sheet.dart';
-import '../../onboarding/presentation/onboarding_screen.dart';
-import 'celestial_dial.dart';
-
+import '../../subscription/presentation/paywall_sheet.dart';
+import 'widgets/home_context_snapshot.dart';
+import 'widgets/home_mini_calendar.dart';
+import 'widgets/home_today_card.dart';
 import 'widgets/living_sphere_display.dart';
 import 'widgets/orbit_navigation_ui.dart';
-
-import '../../labor/presentation/labor_trigger_button.dart';
-import '../../labor/presentation/labor_confirm_sheet.dart';
+import 'widgets/week_detail_insight_card.dart';
 import 'widgets/week_picker_sheet.dart';
+import '../../../core/ui/holographic_background.dart';
 
-// ИСПРАВЛЕНИЕ ОШИБКИ 1: Создаем локальный StreamProvider для экрана
-final orbitSettingsProvider = StreamProvider.autoDispose<PregnancySettings?>((ref) {
+final orbitSettingsProvider =
+    StreamProvider.autoDispose<PregnancySettings?>((ref) {
   return ref.watch(pregnancyRepositoryProvider).watchSettings();
 });
 
@@ -36,82 +39,41 @@ class LivingOrbitScreen extends ConsumerStatefulWidget {
   ConsumerState<LivingOrbitScreen> createState() => _LivingOrbitScreenState();
 }
 
-class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _depthController;
+class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> {
   final TextEditingController _letterController = TextEditingController();
 
   int? _overrideWeek;
   int? _lastLoadedLetterWeek;
-  int _lastHapticState = 0;
-
+  Timer? _letterSaveDebounce;
+  _QueuedLetterSave? _queuedLetterSave;
   String _visualModeKey = PregnancySettings.visualModeFruit;
   bool _isSavingLetter = false;
   bool _isTogglingVisualMode = false;
   String _loadedLetterText = "";
-
-  @override
-  void initState() {
-    super.initState();
-    _depthController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-      lowerBound: -1.0,
-      upperBound: 1.0,
-      value: 0.0,
-    );
-    _depthController.addListener(_handleHaptics);
-  }
-
-  void _handleHaptics() {
-    final value = _depthController.value;
-    int newState = 0;
-    if (value > 0.4) {
-      newState = 1;
-    } else if (value < -0.4) {
-      newState = -1;
-    } else {
-      newState = 0;
-    }
-
-    if (newState != _lastHapticState) {
-      if (newState != 0) {
-        HapticFeedback.mediumImpact();
-      } else {
-        HapticFeedback.selectionClick();
-      }
-      _lastHapticState = newState;
-    }
-  }
+  _LetterSaveState _letterSaveState = _LetterSaveState.idle;
 
   @override
   void dispose() {
-    _depthController.removeListener(_handleHaptics);
-    _depthController.dispose();
+    _letterSaveDebounce?.cancel();
     _letterController.dispose();
     super.dispose();
   }
 
-  void _resetView() {
-    FocusScope.of(context).unfocus();
-    _depthController.animateTo(0.0,
-        curve: Curves.easeInOut, duration: const Duration(milliseconds: 500));
-  }
+  int get _currentRealWeek =>
+      ref.read(orbitSettingsProvider).valueOrNull?.currentWeek ?? 1;
 
-  void _openDetailsView() {
-    FocusScope.of(context).unfocus();
-    _depthController.animateTo(1.0,
-        curve: Curves.easeInOut, duration: const Duration(milliseconds: 500));
-  }
-
-  void _openLetterView() {
-    FocusScope.of(context).unfocus();
-    _depthController.animateTo(-1.0,
-        curve: Curves.easeInOut, duration: const Duration(milliseconds: 500));
-  }
+  int get _currentDisplayWeek => _overrideWeek ?? _currentRealWeek;
 
   void _setDisplayedWeek(int week, int realWeek) {
     final safeWeek = week.clamp(1, 42);
+    final previousWeek = _currentDisplayWeek;
+    final previousText = _letterController.text;
+
+    _letterSaveDebounce?.cancel();
+    if (previousWeek != safeWeek && previousText != _loadedLetterText) {
+      _persistLetter(previousWeek, previousText, updateStatus: false);
+    }
+
     setState(() {
       _overrideWeek = safeWeek == realWeek ? null : safeWeek;
     });
@@ -119,11 +81,10 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
   }
 
   void _handleSphereSwipe(
-      int displayWeek, int realWeek, DragEndDetails details) {
-    if (_depthController.value.abs() > 0.05) {
-      return;
-    }
-
+    int displayWeek,
+    int realWeek,
+    DragEndDetails details,
+  ) {
     final velocity = details.primaryVelocity ?? 0;
     if (velocity.abs() < 250) {
       return;
@@ -151,13 +112,15 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
 
     try {
       final snapshot =
-      await ref.read(pregnancyRepositoryProvider).getOrCreateSnapshot(week);
+          await ref.read(pregnancyRepositoryProvider).getOrCreateSnapshot(week);
       if (!mounted || _lastLoadedLetterWeek != week) return;
 
       final letter = snapshot.letterToBaby ?? "";
       setState(() {
         _loadedLetterText = letter;
         _letterController.text = letter;
+        _letterSaveState =
+            letter.isEmpty ? _LetterSaveState.idle : _LetterSaveState.saved;
       });
     } catch (_) {
       if (!mounted || _lastLoadedLetterWeek != week) return;
@@ -168,16 +131,51 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     }
   }
 
-  Future<void> _saveLetter(int week) async {
-    final text = _letterController.text;
-    if (_isSavingLetter || text == _loadedLetterText) return;
+  Future<void> _persistLetter(
+    int week,
+    String text, {
+    bool updateStatus = true,
+  }) async {
+    if (_isSavingLetter) {
+      _queuedLetterSave = _QueuedLetterSave(
+        week: week,
+        text: text,
+        updateStatus: updateStatus,
+      );
+      return;
+    }
+    if (text == _loadedLetterText && week == _currentDisplayWeek) {
+      if (mounted && updateStatus) {
+        setState(() {
+          _letterSaveState =
+              text.isEmpty ? _LetterSaveState.idle : _LetterSaveState.saved;
+        });
+      }
+      return;
+    }
 
+    if (mounted && updateStatus && week == _currentDisplayWeek) {
+      setState(() => _letterSaveState = _LetterSaveState.saving);
+    }
     setState(() => _isSavingLetter = true);
 
     try {
       await ref.read(pregnancyRepositoryProvider).saveLetter(week, text);
-      _loadedLetterText = text;
+      if (!mounted) return;
+
+      if (week == _currentDisplayWeek) {
+        setState(() {
+          _loadedLetterText = text;
+          if (updateStatus) {
+            _letterSaveState =
+                text.isEmpty ? _LetterSaveState.idle : _LetterSaveState.saved;
+          }
+        });
+      }
     } catch (_) {
+      if (mounted && updateStatus && week == _currentDisplayWeek) {
+        setState(() => _letterSaveState = _LetterSaveState.error);
+      }
       if (mounted) {
         _showErrorSnack(
           AppLocalizations.of(context)?.errorGeneric ??
@@ -188,36 +186,54 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
       if (mounted) {
         setState(() => _isSavingLetter = false);
       }
+      final queuedSave = _queuedLetterSave;
+      _queuedLetterSave = null;
+      if (queuedSave != null && mounted) {
+        _persistLetter(
+          queuedSave.week,
+          queuedSave.text,
+          updateStatus: queuedSave.updateStatus,
+        );
+      }
     }
   }
 
-  Future<void> _toggleVisualMode() async {
-    if (_isTogglingVisualMode) return;
+  Future<void> _saveLetter(int week) async {
+    _letterSaveDebounce?.cancel();
+    final text = _letterController.text;
+    await _persistLetter(week, text);
+  }
 
-    HapticFeedback.selectionClick();
-    final repo = ref.read(pregnancyRepositoryProvider);
-    const modeOrder = [
-      PregnancySettings.visualModeFruit,
-      PregnancySettings.visualModeRealistic,
-      PregnancySettings.visualModeGrowth,
-    ];
-    final currentIndex = modeOrder.indexOf(_visualModeKey);
-    final nextMode = modeOrder[
-    (currentIndex == -1 ? 0 : currentIndex + 1) % modeOrder.length];
-
+  void _handleLetterChanged(int week, String value) {
+    _letterSaveDebounce?.cancel();
     setState(() {
-      _visualModeKey = nextMode;
+      _letterSaveState = value == _loadedLetterText
+          ? (value.isEmpty ? _LetterSaveState.idle : _LetterSaveState.saved)
+          : _LetterSaveState.dirty;
+    });
+
+    if (value == _loadedLetterText) return;
+    _letterSaveDebounce = Timer(
+      const Duration(milliseconds: 900),
+      () => _persistLetter(week, value),
+    );
+  }
+
+  Future<void> _setVisualMode(String modeKey) async {
+    if (_isTogglingVisualMode || _visualModeKey == modeKey) return;
+
+    final previousMode = _visualModeKey;
+    setState(() {
+      _visualModeKey = modeKey;
       _isTogglingVisualMode = true;
     });
 
     try {
-      await repo.setVisualMode(nextMode);
+      await ref.read(pregnancyRepositoryProvider).setVisualMode(modeKey);
     } catch (_) {
       if (mounted) {
         setState(() {
-          _visualModeKey = currentIndex == -1
-              ? PregnancySettings.visualModeFruit
-              : modeOrder[currentIndex];
+          _visualModeKey = previousMode;
         });
         _showErrorSnack(
           AppLocalizations.of(context)?.errorGeneric ??
@@ -233,10 +249,11 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
 
   void _openSettings(PregnancySettings settings) {
     showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (c) => SettingsSheet(currentSettings: settings));
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (c) => SettingsSheet(currentSettings: settings),
+    );
   }
 
   void _openWeekPicker(int realWeek) async {
@@ -253,54 +270,215 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     }
   }
 
-  Widget _buildQuickActions(
-      BuildContext context,
-      AppLocalizations l10n,
-      double opacity,
-      ) {
-    final theme = Theme.of(context);
-    final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-
-    return Positioned(
-      top: 172,
-      left: 0,
-      right: 0,
-      child: AnimatedOpacity(
-        duration: 200.ms,
-        opacity: opacity,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _SphereActionButton(
-              icon: Icons.auto_awesome_outlined,
-              label: l10n.tabDetails,
-              color: mutedColor,
-              onTap: _openDetailsView,
-            ),
-            const SizedBox(width: 12),
-            _SphereActionButton(
-              icon: Icons.edit_outlined,
-              label: l10n.diaryTitle,
-              color: mutedColor,
-              onTap: _openLetterView,
-            ),
-          ],
-        ),
-      ),
+  void _openSheet(Widget sheet) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => sheet,
     );
   }
 
   IconData _getIconFromName(String name) {
     switch (name) {
-      case 'water_drop': return Icons.water_drop_outlined;
-      case 'local_hospital': return Icons.local_hospital_outlined;
-      case 'favorite': return Icons.favorite_border;
-      case 'psychology': return Icons.psychology_outlined;
-      case 'accessibility_new': return Icons.accessibility_new_outlined;
-      case 'spa': return Icons.spa_outlined;
-      case 'child_care': return Icons.child_care;
-      default: return Icons.info_outline;
+      case 'water_drop':
+        return Icons.water_drop_outlined;
+      case 'local_hospital':
+        return Icons.local_hospital_outlined;
+      case 'favorite':
+        return Icons.favorite_border;
+      case 'favorite_border':
+        return Icons.favorite_border;
+      case 'psychology':
+        return Icons.psychology_outlined;
+      case 'accessibility_new':
+        return Icons.accessibility_new_outlined;
+      case 'accessibility':
+        return Icons.accessibility_new_outlined;
+      case 'self_improvement':
+        return Icons.self_improvement_outlined;
+      case 'moving':
+        return Icons.moving_outlined;
+      case 'medication':
+        return Icons.medication_outlined;
+      case 'update':
+        return Icons.update_rounded;
+      case 'spa':
+        return Icons.spa_outlined;
+      case 'child_care':
+        return Icons.child_care;
+      default:
+        return Icons.info_outline;
     }
+  }
+
+  String _trimesterLabel(int week, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    if (week <= 13) return l10n.trimesterFirst;
+    if (week <= 26) return l10n.trimesterSecond;
+    return l10n.trimesterThird;
+  }
+
+  String _cozyMilestoneTitle(BuildContext context) {
+    return AppLocalizations.of(context)!.insightBabyDevTitle;
+  }
+
+  ({String title, String body}) _todayFocus(
+    int week,
+    String languageCode,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    final hour = DateTime.now().hour;
+
+    if (hour < 12) {
+      if (week <= 13) {
+        return (
+          title: l10n.todayFocusMorningEarlyTitle,
+          body: l10n.todayFocusMorningEarlyBody,
+        );
+      }
+      if (week <= 26) {
+        return (
+          title: l10n.todayFocusMorningMidTitle,
+          body: l10n.todayFocusMorningMidBody,
+        );
+      }
+      return (
+        title: l10n.todayFocusMorningLateTitle,
+        body: l10n.todayFocusMorningLateBody,
+      );
+    }
+
+    if (hour < 18) {
+      if (week <= 13) {
+        return (
+          title: l10n.todayFocusDayEarlyTitle,
+          body: l10n.todayFocusDayEarlyBody,
+        );
+      }
+      if (week <= 26) {
+        return (
+          title: l10n.todayFocusDayMidTitle,
+          body: l10n.todayFocusDayMidBody,
+        );
+      }
+      return (
+        title: l10n.todayFocusDayLateTitle,
+        body: l10n.todayFocusDayLateBody,
+      );
+    }
+
+    if (week <= 13) {
+      return (
+        title: l10n.todayFocusEveningEarlyTitle,
+        body: l10n.todayFocusEveningEarlyBody,
+      );
+    }
+    if (week <= 26) {
+      return (
+        title: l10n.todayFocusEveningMidTitle,
+        body: l10n.todayFocusEveningMidBody,
+      );
+    }
+    return (
+      title: l10n.todayFocusEveningLateTitle,
+      body: l10n.todayFocusEveningLateBody,
+    );
+  }
+
+  String _letterSaveLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (_letterSaveState) {
+      case _LetterSaveState.dirty:
+        return l10n.letterStateDraft;
+      case _LetterSaveState.saving:
+        return l10n.letterStateSaving;
+      case _LetterSaveState.saved:
+        return l10n.letterStateSaved;
+      case _LetterSaveState.error:
+        return l10n.letterStateError;
+      case _LetterSaveState.idle:
+        return l10n.connectionPlaceholder;
+    }
+  }
+
+  Widget _buildLettersSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    int week,
+    String? babyName,
+  ) {
+    final theme = Theme.of(context);
+    final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
+    final primaryColor = theme.primaryColor;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: GlassCard(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Text(
+              (babyName != null && babyName.isNotEmpty)
+                  ? l10n.connectionTitleNamed(babyName)
+                  : l10n.connectionTitle,
+              style: theme.textTheme.displayLarge
+                  ?.copyWith(fontSize: 22, color: mutedColor),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            GlassTextField(
+              controller: _letterController,
+              hintText: l10n.connectionPlaceholder,
+              onChanged: (value) => _handleLetterChanged(week, value),
+              onEditingComplete: () async {
+                FocusScope.of(context).unfocus();
+                await _saveLetter(week);
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _letterSaveLabel(context),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: switch (_letterSaveState) {
+                        _LetterSaveState.error =>
+                          Theme.of(context).colorScheme.error,
+                        _LetterSaveState.saved =>
+                          primaryColor.withValues(alpha: 0.78),
+                        _LetterSaveState.saving =>
+                          primaryColor.withValues(alpha: 0.68),
+                        _LetterSaveState.dirty =>
+                          mutedColor.withValues(alpha: 0.86),
+                        _LetterSaveState.idle =>
+                          mutedColor.withValues(alpha: 0.72),
+                      },
+                      fontWeight: _letterSaveState == _LetterSaveState.saved
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    _openSheet(const DiarySheet());
+                  },
+                  icon: Icon(Icons.history_edu, size: 16, color: mutedColor),
+                  label: Text(
+                    l10n.connectionOpenDiary,
+                    style:
+                        theme.textTheme.labelSmall?.copyWith(color: mutedColor),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(duration: 600.ms, delay: 200.ms);
   }
 
   @override
@@ -308,13 +486,16 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
+    final primaryColor = theme.primaryColor;
+    final locale = Localizations.localeOf(context).languageCode;
 
-    if (l10n == null) return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
+    if (l10n == null) {
+      return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
+    }
 
-    // Подписываемся на изменения настроек через наш новый провайдер
     ref.listen<AsyncValue<PregnancySettings?>>(
       orbitSettingsProvider,
-          (previous, next) {
+      (previous, next) {
         final prevDue = previous?.value?.estimatedDueDate;
         final nextDue = next.value?.estimatedDueDate;
         final currentWeek = next.value?.currentWeek;
@@ -325,6 +506,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
             _letterController.clear();
             _lastLoadedLetterWeek = null;
             _loadedLetterText = "";
+            _letterSaveState = _LetterSaveState.idle;
           });
         }
 
@@ -334,12 +516,23 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
       },
     );
 
-    // Получаем текущие настройки (заменяет StreamBuilder)
     final settingsAsync = ref.watch(orbitSettingsProvider);
 
-    // Показываем пустой фон во время загрузки
     if (settingsAsync.isLoading && !settingsAsync.hasValue) {
-      return Scaffold(backgroundColor: theme.scaffoldBackgroundColor);
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Stack(
+          children: [
+            const HolographicBackground(),
+            Center(
+              child: CircularProgressIndicator(
+                color: theme.primaryColor,
+                strokeWidth: 2.4,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     final settings = settingsAsync.valueOrNull;
@@ -350,423 +543,398 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen>
       _visualModeKey = settingsVisualMode;
     }
 
+    final topPadding = MediaQuery.paddingOf(context).top;
     final realWeek = settings.currentWeek;
     final displayWeek = _overrideWeek ?? realWeek;
     final isBrowsingHistory = displayWeek != realWeek;
 
-    return AnimatedBuilder(
-      animation: _depthController,
-      builder: (context, child) {
-        final depth = _depthController.value;
-        final bool isContentOpen = depth.abs() > 0.15;
-        final sphereScale = 1.0 - (depth.clamp(0.0, 1.0) * 0.3) + (depth.clamp(-1.0, 0.0).abs() * 0.2);
-        final sphereOffset = -depth * 80;
-        final uiOpacity = (1.0 - depth.abs() * 3).clamp(0.0, 1.0);
+    final objectData = ref
+        .read(insightRepositoryProvider)
+        .getObjectData(displayWeek, locale, _visualModeKey);
+    final insights = ref
+        .read(insightRepositoryProvider)
+        .getInsightsForWeek(displayWeek, locale);
+    final weekDetail =
+        ref.read(insightRepositoryProvider).getWeekDetail(displayWeek, locale);
+    final progressValue = (displayWeek / 42).clamp(0.0, 1.0);
+    final todayFocus = _todayFocus(displayWeek, locale);
 
-        return Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          resizeToAvoidBottomInset: false,
-          extendBody: true,
-          extendBodyBehindAppBar: true,
-          body: GestureDetector(
-            onTap: () async {
-              FocusScope.of(context).unfocus();
-              await _saveLetter(displayWeek);
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const BreathingBackground(),
+    final extendedInsights = [
+      Insight(
+        id: 'baby_dev_$displayWeek',
+        type: InsightType.baby,
+        title: l10n.insightBabyDevTitle,
+        content: weekDetail.babyDev,
+        iconName: 'child_care',
+      ),
+      Insight(
+        id: 'mom_body_$displayWeek',
+        type: InsightType.body,
+        title: l10n.insightYourBodyTitle,
+        content: weekDetail.momBody,
+        iconName: 'accessibility_new',
+      ),
+      ...insights,
+    ];
 
-                Positioned.fill(
-                  child: Transform.translate(
-                    offset: Offset(0, sphereOffset),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onHorizontalDragEnd: (details) => _handleSphereSwipe(
-                          displayWeek, realWeek, details),
-                      child: LivingSphereDisplay(
-                        week: displayWeek,
-                        scale: sphereScale,
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      resizeToAvoidBottomInset: false,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          const HolographicBackground(),
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () async {
+                FocusScope.of(context).unfocus();
+                await _saveLetter(displayWeek);
+              },
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(24, topPadding + 76, 24, 28),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => _openWeekPicker(realWeek),
+                            child: Container(
+                              color: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    l10n.weekLabel(displayWeek).toUpperCase(),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      letterSpacing: 4.0,
+                                      fontSize: 14,
+                                      color: mutedColor.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    size: 16,
+                                    color: mutedColor.withValues(alpha: 0.3),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (isBrowsingHistory)
+                            GestureDetector(
+                              onTap: () =>
+                                  _setDisplayedWeek(realWeek, realWeek),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      theme.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.history,
+                                      size: 14,
+                                      color: theme.primaryColor,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      l10n.homeReturnToCurrent(realWeek),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: theme.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ).animate().fadeIn().scale(),
+                            ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onHorizontalDragEnd: (details) =>
+                                _handleSphereSwipe(
+                              displayWeek,
+                              realWeek,
+                              details,
+                            ),
+                            child: LivingSphereDisplay(
+                              week: displayWeek,
+                              scale: 1.02,
+                              showModeToggle: false,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          MiniWeekNavigator(
+                            displayWeek: displayWeek,
+                            realWeek: realWeek,
+                            showLaborEntry: settings.showLaborButton,
+                            locale: locale,
+                            visualModeKey: _visualModeKey,
+                            isTogglingVisualMode: _isTogglingVisualMode,
+                            onWeekSelected: (week) =>
+                                _setDisplayedWeek(week, realWeek),
+                            onOpenWeekPicker: () => _openWeekPicker(realWeek),
+                            onVisualModeSelected: _setVisualMode,
+                          ).animate().fadeIn(duration: 480.ms).moveY(
+                                begin: 10,
+                                end: 0,
+                                duration: 480.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
+                          const SizedBox(height: 18),
+                          HomeContextSnapshot(
+                            displayWeek: displayWeek,
+                            locale: locale,
+                            title: objectData.title,
+                            description: objectData.description,
+                            progressValue: progressValue,
+                            trimesterLabel:
+                                _trimesterLabel(displayWeek, context),
+                            weekLabel: l10n.weekLabel(displayWeek),
+                          ).animate().fadeIn(duration: 500.ms).moveY(
+                                begin: -10,
+                                end: 0,
+                                duration: 500.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-
-                Positioned(
-                  top: 130,
-                  child: AnimatedOpacity(
-                    duration: 200.ms,
-                    opacity: uiOpacity,
-                    child: GestureDetector(
-                      onTap: () => _openWeekPicker(realWeek),
+                  SliverToBoxAdapter(
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(40)),
                       child: Container(
-                        color: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.92),
+                              theme.scaffoldBackgroundColor,
+                              theme.scaffoldBackgroundColor,
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withValues(alpha: 0.08),
+                              blurRadius: 28,
+                              offset: const Offset(0, -8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
                           children: [
-                            Text(
-                              l10n.weekLabel(displayWeek).toUpperCase(),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                letterSpacing: 4.0,
-                                fontSize: 14,
-                                color: mutedColor.withValues(alpha: 0.5),
+                            const SizedBox(height: 20),
+                            Container(
+                              width: 40,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Icon(Icons.keyboard_arrow_down_rounded,
-                                size: 16,
-                                color: mutedColor.withValues(alpha: 0.3))
+                            const SizedBox(height: 18),
+                            TodayForYouCard(
+                              focusTitle: todayFocus.title,
+                              focusBody: todayFocus.body,
+                              weeklyTip: weekDetail.tip,
+                            ).animate().fadeIn(duration: 480.ms).moveY(
+                                  begin: 12,
+                                  end: 0,
+                                  duration: 480.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                            const SizedBox(height: 8),
+                            if (weekDetail.milestone != null &&
+                                weekDetail.milestone!.isNotEmpty) ...[
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 32),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    _cozyMilestoneTitle(context),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: mutedColor.withValues(alpha: 0.82),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 32),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.82),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: primaryColor.withValues(alpha: 0.18),
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          primaryColor.withValues(alpha: 0.08),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.emoji_events_rounded,
+                                      color: primaryColor,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Flexible(
+                                      child: Text(
+                                        weekDetail.milestone!,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                          color: primaryColor,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 28),
+                            FetalGrowthSection(week: displayWeek),
+                            const SizedBox(height: 28),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
-
-                _buildQuickActions(context, l10n, uiOpacity),
-                _buildCinematicInfoLayer(context, l10n, displayWeek, depth),
-                _buildLettersLayer(context, l10n, displayWeek, settings.babyName, depth),
-
-                if (MediaQuery.of(context).viewInsets.bottom == 0)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: AnimatedOpacity(
-                      duration: 200.ms,
-                      opacity: (1.0 - depth.abs() * 5).clamp(0.0, 1.0),
-                      child: IgnorePointer(
-                        ignoring: depth.abs() > 0.1,
-                        child: _buildDialArea(context, l10n, displayWeek,
-                            realWeek, isBrowsingHistory),
-                      ),
-                    ),
-                  ),
-
-                OrbitAppBar(
-                  settings: settings,
-                  isFruitMode: _visualModeKey == PregnancySettings.visualModeFruit,
-                  onToggleMode: _toggleVisualMode,
-                  onSettingsTap: () => _openSettings(settings),
-                  depthOpacity: uiOpacity,
-                ),
-
-                if (settings.showLaborButton)
-                  Positioned(
-                    top: 110,
-                    right: 16,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 300),
-                      opacity: isContentOpen ? 0.0 : 1.0,
-                      child: IgnorePointer(
-                        ignoring: isContentOpen,
-                        child: LaborTriggerButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => const LaborConfirmSheet(),
-                            );
-                          },
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: theme.scaffoldBackgroundColor,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            for (var i = 0;
+                                i < extendedInsights.length;
+                                i++) ...[
+                              WeekDetailInsightCard(
+                                insight: extendedInsights[i],
+                                iconData: _getIconFromName(
+                                  extendedInsights[i].iconName,
+                                ),
+                                staggerDelayMs: 120 + (i * 40),
+                              ),
+                              if (i != extendedInsights.length - 1)
+                                const SizedBox(height: 16),
+                            ],
+                          ],
                         ),
                       ),
                     ),
                   ),
-
-                OrbitNavBar(
-                  labelHome: "Home",
-                  labelTools: l10n.tabDetails,
-                  labelDiary: l10n.connectionOpenDiary,
-                  onToolsTap: () => showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (c) => const ToolsSheet()),
-                  onDiaryTap: () => showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (c) => const DiarySheet()),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCinematicInfoLayer(BuildContext context, AppLocalizations l10n, int week, double depth) {
-    if (depth <= 0.05) return const SizedBox();
-
-    final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final objectData = ref.read(insightRepositoryProvider).getObjectData(week, locale, _visualModeKey);
-    final insights = ref.read(insightRepositoryProvider).getInsightsForWeek(week, locale);
-    final slideUp = (1.0 - depth) * 500;
-    final opacity = ((depth - 0.2) / 0.8).clamp(0.0, 1.0);
-
-    return Positioned(
-      top: 120,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Transform.translate(
-        offset: Offset(0, slideUp),
-        child: Opacity(
-          opacity: opacity,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 120),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                    onPressed: _resetView,
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle),
-                      child: const Icon(Icons.keyboard_arrow_down_rounded,
-                          color: Colors.black54),
-                    )),
-                const SizedBox(height: 10),
-                Text(objectData.title,
-                    style: theme.textTheme.displayLarge?.copyWith(fontSize: 42, height: 1.1),
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: Text(objectData.description,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 18,
-                            height: 1.5,
-                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8)),
-                        textAlign: TextAlign.center)),
-                const SizedBox(height: 28),
-                FetalGrowthSection(week: week),
-                const SizedBox(height: 40),
-
-                SizedBox(
-                    height: 240,
-                    child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: insights.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final item = insights[index];
-                          final iconData = _getIconFromName(item.iconName);
-                          return Center(
-                              child: SizedBox(
-                                  width: 200,
-                                  height: 220,
-                                  child: GlassCard(
-                                      forceNoBlur: true,
-                                      padding: const EdgeInsets.all(20),
-                                      child: Column(children: [
-                                        Row(children: [
-                                          Icon(iconData,
-                                              color: theme.textTheme.bodyMedium?.color,
-                                              size: 22),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                              child: Text(item.title,
-                                                  style: theme.textTheme.labelSmall?.copyWith(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.bold),
-                                                  maxLines: 1))
-                                        ]),
-                                        const Spacer(),
-                                        Text(
-                                          item.content,
-                                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
-                                          maxLines: 5,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const Spacer()
-                                      ]))));
-                        })),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLettersLayer(BuildContext context, AppLocalizations l10n, int week, String? babyName, double depth) {
-    if (depth >= 0) return const SizedBox();
-    final theme = Theme.of(context);
-    final mutedColor = theme.textTheme.labelSmall?.color ?? Colors.grey;
-    final opacity = ((depth.abs() - 0.1) / 0.9).clamp(0.0, 1.0);
-    final offset = -150 * (1 + depth);
-
-    return Positioned.fill(
-      top: 100,
-      child: IgnorePointer(
-        ignoring: depth > -0.5,
-        child: Opacity(
-          opacity: opacity,
-          child: Transform.translate(
-            offset: Offset(0, offset),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 100),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                      onPressed: _resetView,
-                      icon: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle),
-                        child: const Icon(Icons.keyboard_arrow_up_rounded,
-                            color: Colors.black54),
-                      )),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      children: [
-                        Text(
-                          (babyName != null && babyName.isNotEmpty)
-                              ? l10n.connectionTitleNamed(babyName)
-                              : l10n.connectionTitle,
-                          style: theme.textTheme.displayLarge
-                              ?.copyWith(fontSize: 24, color: mutedColor),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        GlassTextField(
-                            controller: _letterController,
-                            hintText: l10n.connectionPlaceholder,
-                            onEditingComplete: () async {
-                              FocusScope.of(context).unfocus();
-                              await _saveLetter(week);
-                            }),
-                        const SizedBox(height: 16),
-                        TextButton.icon(
-                            onPressed: () {
-                              showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => const DiarySheet());
-                            },
-                            icon: Icon(Icons.history_edu,
-                                size: 16, color: mutedColor),
-                            label: Text(l10n.connectionOpenDiary,
-                                style: theme.textTheme.labelSmall
-                                    ?.copyWith(color: mutedColor))),
-                      ],
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: theme.scaffoldBackgroundColor,
+                      child: _buildLettersSection(
+                        context,
+                        l10n,
+                        displayWeek,
+                        settings.babyName,
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Container(
+                      color: theme.scaffoldBackgroundColor,
+                      child: SizedBox(
+                        height: 120 + MediaQuery.viewInsetsOf(context).bottom,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDialArea(BuildContext context, AppLocalizations l10n, int displayWeek, int realWeek, bool isBrowsingHistory) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 250,
-      padding: const EdgeInsets.only(bottom: 120),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          if (isBrowsingHistory)
-            GestureDetector(
-              onTap: () => _setDisplayedWeek(realWeek, realWeek),
-              child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                      color: theme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.history, size: 14, color: theme.primaryColor),
-                    const SizedBox(width: 4),
-                    Text(l10n.homeReturnToCurrent(realWeek),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: theme.primaryColor,
-                            fontWeight: FontWeight.bold))
-                  ])).animate().fadeIn().scale(),
-            ),
-          Transform.scale(
-              scale: 1.25,
-              child: CelestialDial(
-                  currentWeek: displayWeek,
-                  realWeek: realWeek,
-                  onWeekChanged: (week) => _setDisplayedWeek(week, realWeek))),
+          OrbitAppBar(
+            settings: settings,
+            onSettingsTap: () => _openSettings(settings),
+            onProTap: () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => const PaywallSheet(),
+              );
+            },
+            depthOpacity: 1.0,
+          ),
+          OrbitNavBar(
+            labelHome: l10n.navHome,
+            labelTools: l10n.navCare,
+            labelDiary: l10n.navDiary,
+            onToolsTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CareCenterScreen()),
+              );
+            },
+            onDiaryTap: () => _openSheet(const DiarySheet()),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SphereActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
+enum _LetterSaveState {
+  idle,
+  dirty,
+  saving,
+  saved,
+  error,
+}
 
-  const _SphereActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
+class _QueuedLetterSave {
+  final int week;
+  final String text;
+  final bool updateStatus;
+
+  const _QueuedLetterSave({
+    required this.week,
+    required this.text,
+    required this.updateStatus,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color.withValues(alpha: 0.85)),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: color.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
