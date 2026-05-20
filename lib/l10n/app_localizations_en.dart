@@ -316,10 +316,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallStatusTitleAndroid => 'Android purchases are coming soon';
 
   @override
-  String get paywallStatusTitleDefault => 'Coming soon';
+  String get paywallStatusTitleDefault => 'Purchases are being connected';
 
   @override
-  String get paywallStatusBody => 'We are working hard to bring Premium features to everyone.';
+  String get paywallStatusBody => 'Premium tools are already marked in the app. Plans will appear here as soon as billing is available.';
 
   @override
   String get symptomTitle => 'How do you feel?';
@@ -1072,6 +1072,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorGeneric => 'Something went wrong';
 
   @override
+  String get errorGenericRetry => 'Something went wrong. Please try again.';
+
+  @override
   String get errorPdfGeneration => 'Failed to generate PDF';
 
   @override
@@ -1289,43 +1292,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallProTitle => 'Unlock Elpis PRO';
 
   @override
-  String get paywallProSubtitle => 'Give yourself peace of mind. Unlock all premium features for a healthy, stress-free pregnancy.';
+  String get paywallProSubtitle => 'Premium currently unlocks the kick counter, contraction timer, symptom guide, and bump gallery.';
 
   @override
-  String get paywallFeatBabyTitle => '3D Realistic Baby';
+  String get paywallFeatBabyTitle => 'Kick Counter';
 
   @override
-  String get paywallFeatBabyDesc => 'Watch development in real-time';
+  String get paywallFeatBabyDesc => 'Track movement sessions in one dedicated tool.';
 
   @override
-  String get paywallFeatReportTitle => 'Doctor Reports';
+  String get paywallFeatReportTitle => 'Contraction Timer';
 
   @override
-  String get paywallFeatReportDesc => 'Export contractions & kicks to PDF';
+  String get paywallFeatReportDesc => 'Time contractions and export a PDF summary for your doctor.';
 
   @override
-  String get paywallFeatAnalyticsTitle => 'Deep Health Analytics';
+  String get paywallFeatAnalyticsTitle => 'Symptom Guide';
 
   @override
-  String get paywallFeatAnalyticsDesc => 'Smart weight & symptom tracking';
+  String get paywallFeatAnalyticsDesc => 'Open "Is it normal?" for quick symptom reference.';
 
   @override
   String get paywallFeatGalleryTitle => 'Bump Gallery';
 
   @override
-  String get paywallFeatGalleryDesc => 'Save every week as a memory';
+  String get paywallFeatGalleryDesc => 'Keep weekly bump photos together as a visual timeline.';
 
   @override
-  String get paywallMonth => '1 MONTH';
+  String get paywallMonth => 'MONTHLY';
 
   @override
-  String get paywallYear => '1 YEAR';
+  String get paywallYear => 'ANNUAL';
 
   @override
-  String get paywallSaveBadge => 'SAVE 50%';
+  String get paywallSaveBadge => 'BEST VALUE';
 
   @override
-  String get paywallContinue => 'CONTINUE';
+  String get paywallContinue => 'UNLOCK PRO';
 
   @override
   String get paywallTerms => 'Terms';
@@ -1337,13 +1340,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallError => 'Failed to unlock. Try again.';
 
   @override
-  String get paywallTrialBadge => '3 DAYS FREE';
+  String get paywallTrialBadge => 'RECOMMENDED';
 
   @override
-  String get paywallStartTrial => 'START FREE TRIAL';
+  String get paywallStartTrial => 'UNLOCK PRO';
 
   @override
-  String get paywallCancelAnytime => 'Cancel anytime. No commitment.';
+  String get paywallCancelAnytime => 'Subscriptions can be managed in your store settings.';
 
   @override
   String get greetingNight => 'Good night 🌙';
@@ -1469,6 +1472,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingLanguagePrompt => 'Choose language';
 
   @override
+  String get onboardingLanguageBody =>
+      'Set your language now. You can change it later in Settings.';
+
+  @override
+  String get onboardingProfileBody =>
+      'A few gentle details help us shape the journey around you.';
+
+  @override
+  String get onboardingDateBody =>
+      'Choose the option you know best. We\'ll calculate the timeline for you.';
+
+  @override
+  String get onboardingReadyBody =>
+      'Your space is ready. You can adjust names, reminders, and labor prep any time.';
+
+  @override
   String get privacyUnavailable => 'Privacy policy has not been added to the app yet.';
 
   @override
@@ -1476,6 +1495,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallProBadge => 'PRO';
+
+  @override
+  String get paywallMockTitle => 'Test PRO access';
+
+  @override
+  String get paywallMockBody =>
+      'You are in a development build. Use the button below to simulate Premium and verify locked flows.';
+
+  @override
+  String get paywallMockCta => 'ENABLE TEST PRO';
 
   @override
   String reportGenerationError(Object error) {
@@ -1510,6 +1539,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get laborHospitalAddressHint => 'Street, Building...';
+
+  @override
+  String get settingsOverviewTitle => 'Everything in one calm place';
+
+  @override
+  String get settingsOverviewBody =>
+      'Update your names, due date, reminders, and emergency details without hunting through the app.';
+
+  @override
+  String get settingsProfileTitle => 'Profile';
+
+  @override
+  String get settingsProfileBody =>
+      'Names and due date used across your journey.';
+
+  @override
+  String get settingsPreferencesTitle => 'App preferences';
+
+  @override
+  String get settingsPreferencesBody =>
+      'Language, reminders, and the way your baby is shown.';
+
+  @override
+  String get settingsAccountTitle => 'Account';
+
+  @override
+  String get settingsAccountBody =>
+      'Stay in guest mode or connect an account whenever you\'re ready.';
+
+  @override
+  String get settingsLaborPrepTitle => 'Labor & emergency prep';
+
+  @override
+  String get settingsLaborPrepBody =>
+      'Keep important contacts ready and leave the labor shortcut visible only if you want it.';
+
+  @override
+  String get settingsDocsTitle => 'Reports & privacy';
+
+  @override
+  String get settingsDocsBody =>
+      'Export a PDF, review the medical disclaimer, and check privacy information.';
+
+  @override
+  String get settingsDangerTitle => 'Danger zone';
+
+  @override
+  String get settingsDangerBody =>
+      'Delete local data only if you truly want to start over.';
+
+  @override
+  String get settingsSaveChanges => 'Save changes';
+
+  @override
+  String get settingsChangesSaved => 'Changes saved';
+
+  @override
+  String get settingsSaveHelper =>
+      'Toggles save instantly. Text fields save when you tap Save.';
+
+  @override
+  String get settingsShowLaborButton => 'Show labor shortcut on Home';
+
+  @override
+  String get settingsShowLaborButtonBody =>
+      'Keep the emergency entry point visible when you want faster access.';
 
   @override
   String get todayForYouFootnote => 'You can come back to this gentle focus anytime today.';

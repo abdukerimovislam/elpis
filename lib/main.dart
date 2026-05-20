@@ -157,7 +157,9 @@ class _BloomAppState extends ConsumerState<BloomApp> {
         return MaterialApp(
           onGenerateTitle: (context) => AppLocalizations.of(context)?.appName ?? 'Elpis',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.getTheme(week: settings?.currentWeek),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeMode.system,
           locale: userLocale,
 
           localizationsDelegates: const [
@@ -186,7 +188,7 @@ class _BloomAppState extends ConsumerState<BloomApp> {
                             settings == null &&
                             hasCompletedEntryChoice)) {
                       return Scaffold(
-                        backgroundColor: AppTheme.getTheme().scaffoldBackgroundColor,
+                        backgroundColor: AppTheme.light.scaffoldBackgroundColor,
                         body: const Center(child: CircularProgressIndicator()),
                       );
                     }

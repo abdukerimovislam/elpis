@@ -11,6 +11,12 @@ class MockSubscriptionRepository implements SubscriptionRepository {
   Stream<bool> get isProStream => _isProController.stream;
 
   @override
+  bool get isMockMode => true;
+
+  @override
+  bool get isBillingConfigured => false;
+
+  @override
   Future<void> init() async {
     await Future.delayed(const Duration(seconds: 1));
     debugPrint("MOCK: Subscription SDK Initialized");

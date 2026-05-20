@@ -84,10 +84,7 @@ class _LivingSphereDisplayState extends ConsumerState<LivingSphereDisplay> {
       await ref.read(pregnancyRepositoryProvider).setVisualMode(nextMode);
     } catch (_) {
       if (mounted) {
-        _showErrorSnack(
-          AppLocalizations.of(context)?.errorGeneric ??
-              "Something went wrong. Please try again.",
-        );
+        _showErrorSnack(AppLocalizations.of(context)!.errorGenericRetry);
       }
     } finally {
       if (mounted) {
@@ -289,6 +286,11 @@ class _CellDevelopmentAnimationState extends State<CellDevelopmentAnimation>
   late AnimationController _controller;
   int _stage = 1;
 
+  String get _stageAssetPath {
+    final stageNumber = _stage.toString().padLeft(2, '0');
+    return 'assets/images/fetal_growth/realistic/stage_$stageNumber.png';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -328,7 +330,7 @@ class _CellDevelopmentAnimationState extends State<CellDevelopmentAnimation>
       child: RepaintBoundary(
         key: ValueKey<int>(_stage),
         child: OptimizedImage(
-          path: 'assets/images/fetal_growth/realistic/stage_0.$_stage.png',
+          path: _stageAssetPath,
           height: widget.size * 0.6,
           memCacheWidth: 800,
         ),
@@ -353,8 +355,6 @@ class _ModeToggleButton extends StatelessWidget {
     final textColor =
         Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
     final l10n = AppLocalizations.of(context)!;
-    final locale = Localizations.localeOf(context).languageCode;
-    final isRu = locale == 'ru';
 
     final (IconData icon, String label, int target) = switch (visualModeKey) {
       PregnancySettings.visualModeFruit => (
@@ -364,7 +364,7 @@ class _ModeToggleButton extends StatelessWidget {
         ),
       PregnancySettings.visualModeGrowth => (
           Icons.child_friendly_rounded,
-          isRu ? 'Развитие' : 'Growth',
+          l10n.weekNavGrowth,
           2,
         ),
       _ => (

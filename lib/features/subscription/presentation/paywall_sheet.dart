@@ -84,23 +84,34 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     final primaryColor = theme.primaryColor;
     final l10n = AppLocalizations.of(context)!;
     final packagesAsync = ref.watch(packagesProvider);
+    final repository = ref.read(subscriptionRepositoryProvider);
+    final isMockMode = repository.isMockMode;
+    final isBillingConfigured = repository.isBillingConfigured;
 
-    final title = l10n.paywallProTitle;
-    final subtitle = l10n.paywallProSubtitle;
+    final title = isMockMode
+        ? l10n.paywallMockTitle
+        : isBillingConfigured
+            ? l10n.paywallProTitle
+            : l10n.paywallStatusTitleDefault;
+    final subtitle = isMockMode
+        ? l10n.paywallMockBody
+        : isBillingConfigured
+            ? l10n.paywallProSubtitle
+            : l10n.paywallStatusBody;
 
     final features = [
       {
-        'icon': Icons.child_care_rounded,
+        'icon': Icons.touch_app_outlined,
         'title': l10n.paywallFeatBabyTitle,
         'desc': l10n.paywallFeatBabyDesc,
       },
       {
-        'icon': Icons.picture_as_pdf_outlined,
+        'icon': Icons.timer_outlined,
         'title': l10n.paywallFeatReportTitle,
         'desc': l10n.paywallFeatReportDesc,
       },
       {
-        'icon': Icons.analytics_outlined,
+        'icon': Icons.healing_outlined,
         'title': l10n.paywallFeatAnalyticsTitle,
         'desc': l10n.paywallFeatAnalyticsDesc,
       },
@@ -264,136 +275,142 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
               ),
 
               // Tiers
-              packagesAsync.when(
-                data: (packages) {
-                  // Fallback strings if RevenueCat is not yet configured
-                  String monthPrice = packages.isNotEmpty
-                      ? packages
-                          .firstWhere(
-                              (p) => p.packageType == PackageType.monthly,
-                              orElse: () => packages.first)
-                          .storeProduct
-                          .priceString
-                      : "\$4.99";
-                  String yearPrice = packages.isNotEmpty
-                      ? packages
-                          .firstWhere(
-                              (p) => p.packageType == PackageType.annual,
-                              orElse: () => packages.last)
-                          .storeProduct
-                          .priceString
-                      : "\$29.99";
+              if (isMockMode)
+                _buildMockStateCard(l10n, primaryColor)
+              else if (!isBillingConfigured)
+                _buildStatusCard(
+                  icon: Icons.schedule_rounded,
+                  title: l10n.paywallStatusTitleDefault,
+                  body: l10n.paywallStatusBody,
+                )
+              else
+                packagesAsync.when(
+                  data: (packages) {
+                    if (packages.isEmpty) {
+                      return _buildStatusCard(
+                        icon: Icons.credit_card_off_rounded,
+                        title: l10n.paywallOffersLoadError,
+                        body: l10n.paywallStatusBody,
+                      );
+                    }
 
-                  Package? selectedPackage;
-                  if (packages.isNotEmpty) {
-                    selectedPackage = _isAnnual
-                        ? packages.firstWhere(
-                            (p) => p.packageType == PackageType.annual,
-                            orElse: () => packages.last)
-                        : packages.firstWhere(
-                            (p) => p.packageType == PackageType.monthly,
-                            orElse: () => packages.first);
-                  }
+                    final monthPackage = packages.firstWhere(
+                      (p) => p.packageType == PackageType.monthly,
+                      orElse: () => packages.first,
+                    );
+                    final yearPackage = packages.firstWhere(
+                      (p) => p.packageType == PackageType.annual,
+                      orElse: () => packages.last,
+                    );
 
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _buildTierCard(
-                                title: l10n.paywallMonth,
-                                price: monthPrice,
-                                isSelected: !_isAnnual,
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setState(() => _isAnnual = false);
-                                },
+                    final monthPrice = monthPackage.storeProduct.priceString;
+                    final yearPrice = yearPackage.storeProduct.priceString;
+                    final selectedPackage =
+                        _isAnnual ? yearPackage : monthPackage;
+
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _buildTierCard(
+                                  title: l10n.paywallMonth,
+                                  price: monthPrice,
+                                  isSelected: !_isAnnual,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _isAnnual = false);
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildTierCard(
-                                title: l10n.paywallYear,
-                                price: yearPrice,
-                                badge: l10n.paywallSaveBadge,
-                                subtitle: l10n.paywallTrialBadge, // Trial text!
-                                isSelected: _isAnnual,
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  setState(() => _isAnnual = true);
-                                },
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTierCard(
+                                  title: l10n.paywallYear,
+                                  price: yearPrice,
+                                  badge: l10n.paywallSaveBadge,
+                                  isSelected: _isAnnual,
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _isAnnual = true);
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // CTA Button
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => _processPurchase(selectedPackage),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16)),
-                              elevation: 8,
-                              shadowColor: primaryColor.withValues(alpha: 0.5),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2))
-                                : Text(
-                                    _isAnnual
-                                        ? l10n.paywallStartTrial
-                                        : l10n.paywallContinue,
-                                    style: const TextStyle(
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => _processPurchase(selectedPackage),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 8,
+                                shadowColor:
+                                    primaryColor.withValues(alpha: 0.5),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      l10n.paywallContinue,
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.0),
-                                  ),
-                          ),
-                        )
-                            .animate(
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                            ),
+                          )
+                              .animate(
                                 onPlay: (controller) =>
-                                    controller.repeat(reverse: true))
-                            .scaleXY(
+                                    controller.repeat(reverse: true),
+                              )
+                              .scaleXY(
                                 begin: 1.0,
                                 end: 1.02,
                                 duration: 1500.ms,
-                                curve: Curves.easeInOut),
-                      ),
-
-                      const SizedBox(height: 16),
-                      Text(
-                        l10n.paywallCancelAnytime,
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 12),
-                      ).animate().fadeIn(delay: 500.ms),
-                    ],
-                  );
-                },
-                loading: () => const Center(
-                    child: CircularProgressIndicator(color: Colors.white)),
-                error: (e, st) => Center(
-                  child: Text(
-                    l10n.paywallOffersLoadError,
-                    style: const TextStyle(color: Colors.white54),
+                                curve: Curves.easeInOut,
+                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.paywallCancelAnytime,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ).animate().fadeIn(delay: 500.ms),
+                      ],
+                    );
+                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  error: (e, st) => _buildStatusCard(
+                    icon: Icons.wifi_tethering_error_rounded,
+                    title: l10n.paywallOffersLoadError,
+                    body: l10n.paywallStatusBody,
                   ),
                 ),
-              ),
 
               // Footer
               Padding(
@@ -411,7 +428,9 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                     ),
                     const Text("•", style: TextStyle(color: Colors.white38)),
                     TextButton(
-                      onPressed: _isLoading ? null : _restorePurchases,
+                      onPressed: _isLoading || !isBillingConfigured
+                          ? null
+                          : _restorePurchases,
                       child: Text(l10n.paywallRestore,
                           style: const TextStyle(
                               color: Colors.white38, fontSize: 12)),
@@ -426,11 +445,112 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
     );
   }
 
+  Widget _buildStatusCard({
+    required IconData icon,
+    required String title,
+    required String body,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white70, size: 28),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMockStateCard(AppLocalizations l10n, Color primaryColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: primaryColor.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.science_rounded,
+              color: primaryColor,
+              size: 30,
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _restorePurchases,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        l10n.paywallMockCta,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTierCard({
     required String title,
     required String price,
     String? badge,
-    String? subtitle,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -468,14 +588,6 @@ class _PaywallSheetState extends ConsumerState<PaywallSheet> {
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.w800)),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: TextStyle(
-                          color: primaryColor.withValues(alpha: 0.8),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
-                ]
               ],
             ),
             if (badge != null)

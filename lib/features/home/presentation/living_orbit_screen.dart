@@ -124,10 +124,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> {
       });
     } catch (_) {
       if (!mounted || _lastLoadedLetterWeek != week) return;
-      _showErrorSnack(
-        AppLocalizations.of(context)?.errorGeneric ??
-            "Something went wrong. Please try again.",
-      );
+      _showErrorSnack(AppLocalizations.of(context)!.errorGenericRetry);
     }
   }
 
@@ -177,10 +174,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> {
         setState(() => _letterSaveState = _LetterSaveState.error);
       }
       if (mounted) {
-        _showErrorSnack(
-          AppLocalizations.of(context)?.errorGeneric ??
-              "Something went wrong. Please try again.",
-        );
+        _showErrorSnack(AppLocalizations.of(context)!.errorGenericRetry);
       }
     } finally {
       if (mounted) {
@@ -235,10 +229,7 @@ class _LivingOrbitScreenState extends ConsumerState<LivingOrbitScreen> {
         setState(() {
           _visualModeKey = previousMode;
         });
-        _showErrorSnack(
-          AppLocalizations.of(context)?.errorGeneric ??
-              "Something went wrong. Please try again.",
-        );
+        _showErrorSnack(AppLocalizations.of(context)!.errorGenericRetry);
       }
     } finally {
       if (mounted) {

@@ -2153,6 +2153,12 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get errorGeneric;
 
+  /// No description provided for @errorGenericRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get errorGenericRetry;
+
   /// No description provided for @errorPdfGeneration.
   ///
   /// In en, this message translates to:
@@ -2939,6 +2945,30 @@ abstract class AppLocalizations {
   /// **'Choose language'**
   String get onboardingLanguagePrompt;
 
+  /// No description provided for @onboardingLanguageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your language now. You can change it later in Settings.'**
+  String get onboardingLanguageBody;
+
+  /// No description provided for @onboardingProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A few gentle details help us shape the journey around you.'**
+  String get onboardingProfileBody;
+
+  /// No description provided for @onboardingDateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the option you know best. We\'ll calculate the timeline for you.'**
+  String get onboardingDateBody;
+
+  /// No description provided for @onboardingReadyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your space is ready. You can adjust names, reminders, and labor prep any time.'**
+  String get onboardingReadyBody;
+
   /// No description provided for @privacyUnavailable.
   ///
   /// In en, this message translates to:
@@ -2956,6 +2986,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'PRO'**
   String get paywallProBadge;
+
+  /// No description provided for @paywallMockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Test PRO access'**
+  String get paywallMockTitle;
+
+  /// No description provided for @paywallMockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in a development build. Use the button below to simulate Premium and verify locked flows.'**
+  String get paywallMockBody;
+
+  /// No description provided for @paywallMockCta.
+  ///
+  /// In en, this message translates to:
+  /// **'ENABLE TEST PRO'**
+  String get paywallMockCta;
 
   /// No description provided for @reportGenerationError.
   ///
@@ -3016,6 +3064,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Street, Building...'**
   String get laborHospitalAddressHint;
+
+  /// No description provided for @settingsOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in one calm place'**
+  String get settingsOverviewTitle;
+
+  /// No description provided for @settingsOverviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your names, due date, reminders, and emergency details without hunting through the app.'**
+  String get settingsOverviewBody;
+
+  /// No description provided for @settingsProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get settingsProfileTitle;
+
+  /// No description provided for @settingsProfileBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Names and due date used across your journey.'**
+  String get settingsProfileBody;
+
+  /// No description provided for @settingsPreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App preferences'**
+  String get settingsPreferencesTitle;
+
+  /// No description provided for @settingsPreferencesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Language, reminders, and the way your baby is shown.'**
+  String get settingsPreferencesBody;
+
+  /// No description provided for @settingsAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccountTitle;
+
+  /// No description provided for @settingsAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay in guest mode or connect an account whenever you're ready.'**
+  String get settingsAccountBody;
+
+  /// No description provided for @settingsLaborPrepTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Labor & emergency prep'**
+  String get settingsLaborPrepTitle;
+
+  /// No description provided for @settingsLaborPrepBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep important contacts ready and leave the labor shortcut visible only if you want it.'**
+  String get settingsLaborPrepBody;
+
+  /// No description provided for @settingsDocsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports & privacy'**
+  String get settingsDocsTitle;
+
+  /// No description provided for @settingsDocsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Export a PDF, review the medical disclaimer, and check privacy information.'**
+  String get settingsDocsBody;
+
+  /// No description provided for @settingsDangerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get settingsDangerTitle;
+
+  /// No description provided for @settingsDangerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete local data only if you truly want to start over.'**
+  String get settingsDangerBody;
+
+  /// No description provided for @settingsSaveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get settingsSaveChanges;
+
+  /// No description provided for @settingsChangesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved'**
+  String get settingsChangesSaved;
+
+  /// No description provided for @settingsSaveHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggles save instantly. Text fields save when you tap Save.'**
+  String get settingsSaveHelper;
+
+  /// No description provided for @settingsShowLaborButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Show labor shortcut on Home'**
+  String get settingsShowLaborButton;
+
+  /// No description provided for @settingsShowLaborButtonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the emergency entry point visible when you want faster access.'**
+  String get settingsShowLaborButtonBody;
 
   /// No description provided for @todayForYouFootnote.
   ///

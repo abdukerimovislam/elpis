@@ -23,6 +23,8 @@ class SubscriptionRepository {
 
   final _isProController = StreamController<bool>.broadcast();
   Stream<bool> get isProStream => _isProController.stream;
+  bool get isMockMode => false;
+  bool get isBillingConfigured => _isConfigured;
 
   bool _isProCached = false;
 

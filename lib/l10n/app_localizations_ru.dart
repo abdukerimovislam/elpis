@@ -316,10 +316,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paywallStatusTitleAndroid => 'Покупки для Android скоро появятся';
 
   @override
-  String get paywallStatusTitleDefault => 'Скоро появится';
+  String get paywallStatusTitleDefault => 'Покупки скоро появятся';
 
   @override
-  String get paywallStatusBody => 'Мы работаем над запуском Premium для всех пользователей.';
+  String get paywallStatusBody => 'Премиум-инструменты уже отмечены в приложении. Тарифы появятся здесь, как только будет подключена оплата.';
 
   @override
   String get symptomTitle => 'Как вы себя чувствуете?';
@@ -1072,6 +1072,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorGeneric => 'Что-то пошло не так';
 
   @override
+  String get errorGenericRetry => 'Что-то пошло не так. Попробуйте еще раз.';
+
+  @override
   String get errorPdfGeneration => 'Не удалось создать PDF';
 
   @override
@@ -1289,43 +1292,43 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paywallProTitle => 'Открой Elpis PRO';
 
   @override
-  String get paywallProSubtitle => 'Подари себе уверенность. Раскрой все возможности приложения для здоровой и спокойной беременности.';
+  String get paywallProSubtitle => 'Сейчас Premium открывает счётчик шевелений, таймер схваток, симптом-гид и галерею животика.';
 
   @override
-  String get paywallFeatBabyTitle => '3D Реалистичный Малыш';
+  String get paywallFeatBabyTitle => 'Счётчик шевелений';
 
   @override
-  String get paywallFeatBabyDesc => 'Наблюдай за развитием в реальном времени';
+  String get paywallFeatBabyDesc => 'Отслеживай сессии шевелений в отдельном инструменте.';
 
   @override
-  String get paywallFeatReportTitle => 'Отчеты для врача';
+  String get paywallFeatReportTitle => 'Таймер схваток';
 
   @override
-  String get paywallFeatReportDesc => 'Экспорт схваток и шевелений в PDF';
+  String get paywallFeatReportDesc => 'Засекай схватки и выгружай PDF-сводку для врача.';
 
   @override
-  String get paywallFeatAnalyticsTitle => 'Глубокая аналитика';
+  String get paywallFeatAnalyticsTitle => 'Симптом-гид';
 
   @override
-  String get paywallFeatAnalyticsDesc => 'Умный анализ веса и симптомов';
+  String get paywallFeatAnalyticsDesc => 'Открой «Нормально ли это?» для быстрой проверки симптомов.';
 
   @override
   String get paywallFeatGalleryTitle => 'Галерея животика';
 
   @override
-  String get paywallFeatGalleryDesc => 'Сохрани каждую неделю на память';
+  String get paywallFeatGalleryDesc => 'Сохраняй фото по неделям в одной визуальной истории.';
 
   @override
-  String get paywallMonth => '1 МЕСЯЦ';
+  String get paywallMonth => 'МЕСЯЦ';
 
   @override
-  String get paywallYear => '1 ГОД';
+  String get paywallYear => 'ГОД';
 
   @override
-  String get paywallSaveBadge => 'ВЫГОДНО';
+  String get paywallSaveBadge => 'ЛУЧШИЙ ВЫБОР';
 
   @override
-  String get paywallContinue => 'ПРОДОЛЖИТЬ';
+  String get paywallContinue => 'ОТКРЫТЬ PRO';
 
   @override
   String get paywallTerms => 'Условия';
@@ -1337,13 +1340,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get paywallError => 'Не удалось разблокировать. Попробуйте еще раз.';
 
   @override
-  String get paywallTrialBadge => '3 ДНЯ БЕСПЛАТНО';
+  String get paywallTrialBadge => 'РЕКОМЕНДУЕМ';
 
   @override
-  String get paywallStartTrial => 'НАЧАТЬ 3 ДНЯ БЕСПЛАТНО';
+  String get paywallStartTrial => 'ОТКРЫТЬ PRO';
 
   @override
-  String get paywallCancelAnytime => 'Отмените в любой момент. Без обязательств.';
+  String get paywallCancelAnytime => 'Управлять подпиской можно в настройках магазина.';
 
   @override
   String get greetingNight => 'Доброй ночи 🌙';
@@ -1469,6 +1472,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onboardingLanguagePrompt => 'Выберите язык';
 
   @override
+  String get onboardingLanguageBody =>
+      'Выберите язык сейчас. Позже его всегда можно поменять в настройках.';
+
+  @override
+  String get onboardingProfileBody =>
+      'Пара спокойных деталей поможет нам сделать путь более личным.';
+
+  @override
+  String get onboardingDateBody =>
+      'Выберите тот вариант, который знаете лучше. Срок мы рассчитаем сами.';
+
+  @override
+  String get onboardingReadyBody =>
+      'Ваше пространство готово. Имена, напоминания и подготовку к родам можно поменять в любой момент.';
+
+  @override
   String get privacyUnavailable => 'Политика конфиденциальности пока не добавлена в приложение.';
 
   @override
@@ -1476,6 +1495,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get paywallProBadge => 'PRO';
+
+  @override
+  String get paywallMockTitle => 'Тестовый доступ к PRO';
+
+  @override
+  String get paywallMockBody =>
+      'Сейчас открыта dev-сборка. Кнопка ниже включает Premium в тестовом режиме, чтобы проверить все закрытые сценарии.';
+
+  @override
+  String get paywallMockCta => 'ВКЛЮЧИТЬ TEST PRO';
 
   @override
   String reportGenerationError(Object error) {
@@ -1510,6 +1539,74 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get laborHospitalAddressHint => 'Улица, дом...';
+
+  @override
+  String get settingsOverviewTitle =>
+      'Все важное в одном спокойном месте';
+
+  @override
+  String get settingsOverviewBody =>
+      'Меняйте имена, дату родов, напоминания и экстренные данные без долгих поисков по приложению.';
+
+  @override
+  String get settingsProfileTitle => 'Профиль';
+
+  @override
+  String get settingsProfileBody =>
+      'Имена и дата родов, которые используются по всему приложению.';
+
+  @override
+  String get settingsPreferencesTitle => 'Настройки приложения';
+
+  @override
+  String get settingsPreferencesBody =>
+      'Язык, напоминания и то, как показывается малыш.';
+
+  @override
+  String get settingsAccountTitle => 'Аккаунт';
+
+  @override
+  String get settingsAccountBody =>
+      'Оставайтесь в гостевом режиме или подключите аккаунт, когда будете готовы.';
+
+  @override
+  String get settingsLaborPrepTitle => 'Роды и экстренная подготовка';
+
+  @override
+  String get settingsLaborPrepBody =>
+      'Держите важные контакты под рукой и оставляйте кнопку родов только если она вам нужна.';
+
+  @override
+  String get settingsDocsTitle => 'Отчеты и конфиденциальность';
+
+  @override
+  String get settingsDocsBody =>
+      'Выгрузите PDF, перечитайте медицинский дисклеймер и проверьте информацию о приватности.';
+
+  @override
+  String get settingsDangerTitle => 'Опасная зона';
+
+  @override
+  String get settingsDangerBody =>
+      'Удаляйте локальные данные только если точно хотите начать заново.';
+
+  @override
+  String get settingsSaveChanges => 'Сохранить изменения';
+
+  @override
+  String get settingsChangesSaved => 'Изменения сохранены';
+
+  @override
+  String get settingsSaveHelper =>
+      'Переключатели сохраняются сразу. Текстовые поля сохраняются по кнопке.';
+
+  @override
+  String get settingsShowLaborButton =>
+      'Показывать кнопку родов на главном экране';
+
+  @override
+  String get settingsShowLaborButtonBody =>
+      'Оставьте быстрый вход в экстренный режим, если хотите более быстрый доступ.';
 
   @override
   String get todayForYouFootnote => 'Вы можете спокойно возвращаться к этому блоку в течение дня.';
